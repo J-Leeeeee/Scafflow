@@ -11,7 +11,7 @@ export type HintDepth = 'socratic' | 'concrete';
 export type ResponseLength = 'short' | 'brief' | 'medium';
 export type CourseLevel = 'intro' | 'intermediate' | 'advanced';
 export type LearnerProfile = 'starter' | 'exploring' | 'distracted' | 'independent';
-export type StepType = 'planning' | 'mcq' | 'numeric' | 'open';
+export type StepType = 'planning' | 'mcq' | 'numeric' | 'open' | 'drawing_task';
 
 // ============================================================================
 // CORE PROFILE

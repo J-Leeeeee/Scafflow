@@ -1,7 +1,6 @@
 import pool from '../db/client';
 
 export type InterventionTrigger =
-  | { type: 'idle';         idleStreakS: number }
   | { type: 'error_streak'; consecutiveErrors: number }
   | { type: 'hint_budget_exhausted'; hintsUsed: number };
 
@@ -16,26 +15,6 @@ async function logIntervention(
      VALUES ($1, $2, $3, $4, $5)`,
     [sessionId, studentId, trigger.type, trigger, 'hint'],
   );
-}
-
-// Called from heartbeat. Returns the trigger if idle threshold is breached, null otherwise.
-export async function checkIdleThreshold(
-  sessionId: string,
-  studentId: string,
-  idleStreakS: number,
-): Promise<InterventionTrigger | null> {
-  const result = await pool.query<{ idle_threshold_s: number }>(
-    'SELECT idle_threshold_s FROM adaptive_config WHERE student_id=$1',
-    [studentId],
-  );
-  if (result.rows.length === 0) return null;
-
-  const { idle_threshold_s } = result.rows[0];
-  if (idleStreakS < idle_threshold_s) return null;
-
-  const trigger: InterventionTrigger = { type: 'idle', idleStreakS };
-  await logIntervention(sessionId, studentId, trigger);
-  return trigger;
 }
 
 // Called from submitAnswer. Returns the first threshold breached, or null.

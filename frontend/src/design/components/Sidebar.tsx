@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 
-import { TOTAL_STEPS } from '../mockSteps';
 import type { CircuitOverlay } from '../types';
 import { CircuitDiagram } from './CircuitDiagram';
 
 interface SidebarProps {
   stepNumber: number;
+  totalSteps: number;
   circuitOverlay?: CircuitOverlay;
   goalText?: string;
   stepCard: ReactNode;
@@ -17,6 +17,7 @@ interface SidebarProps {
 
 export function Sidebar({
   stepNumber,
+  totalSteps,
   circuitOverlay = 'none',
   goalText = 'Find the Thévenin equivalent at terminals a, b.',
   stepCard,
@@ -29,7 +30,7 @@ export function Sidebar({
     <>
       <div className="flex items-center px-4 pt-4 pb-3">
         <p className="text-[14px] font-medium tracking-[0.05em] text-[#5D5D5D] uppercase">
-          Step {stepNumber}/{TOTAL_STEPS}
+          Step {stepNumber}/{totalSteps}
         </p>
       </div>
 

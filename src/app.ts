@@ -30,6 +30,13 @@ app.use('/api/homework-sets', homeworkSetsRouter);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  if (!res.headersSent) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Serve the built frontend only outside test mode to avoid requiring a built dist.
 if (process.env.NODE_ENV !== 'test') {
   const frontendDist = path.join(__dirname, '../frontend/dist');

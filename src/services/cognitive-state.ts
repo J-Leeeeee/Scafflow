@@ -94,16 +94,6 @@ export async function updateConsecutiveErrors(studentId: string, correct: boolea
   await recalcStressAndThresholds(studentId);
 }
 
-// Persists the current idle streak when the heartbeat detects a threshold breach,
-// then recalculates stress so adaptive_config reflects the student's disengagement.
-export async function updateIdleStreak(studentId: string, idleStreakS: number): Promise<void> {
-  await pool.query(
-    `UPDATE cognitive_state SET idle_streak_s=$1, updated_at=now() WHERE student_id=$2`,
-    [idleStreakS, studentId],
-  );
-  await recalcStressAndThresholds(studentId);
-}
-
 // Updates cognitive state from a checkin value and recalculates thresholds.
 // The audit INSERT into checkin_responses is the caller's responsibility (events handler).
 export async function updateFromCheckin(

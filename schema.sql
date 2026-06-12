@@ -19,7 +19,7 @@ CREATE TYPE hint_depth      AS ENUM ('socratic', 'concrete');
 CREATE TYPE response_length AS ENUM ('short', 'brief', 'medium');
 CREATE TYPE course_level    AS ENUM ('intro', 'intermediate', 'advanced');
 CREATE TYPE learner_profile AS ENUM ('starter', 'exploring', 'distracted', 'independent');
-CREATE TYPE step_type       AS ENUM ('planning', 'mcq', 'numeric', 'open');
+CREATE TYPE step_type       AS ENUM ('planning', 'mcq', 'numeric', 'open', 'drawing_task');
 
 -- ============================================================================
 -- CORE PROFILE  (live, mutable)

@@ -1,13 +1,13 @@
 // End-to-end demo for Sprints 1 & 2.
-// Registers a test student, walks the full happy path, fires both
-// error-streak and idle interventions, then cleans up.
+// Registers a test student, walks the full happy path, fires an
+// error-streak intervention, then cleans up.
 //
 // Usage:  npx tsx scripts/demo.ts
 //   (server must be running: npm run dev)
 
 import 'dotenv/config';
 import pool from '../src/db/client';
-import { getSession, setSession, deleteSession } from '../src/redis/session-store';
+import { deleteSession } from '../src/redis/session-store';
 import redis from '../src/redis/client';
 
 const BASE = `http://localhost:${process.env.PORT ?? 3000}`;
@@ -228,29 +228,6 @@ async function main() {
     info('note: intervention fires when consecutive_errors reaches the threshold');
   }
 
-  // ── 9. Idle intervention via heartbeat ────────────────────────────────────
-  section('9  Idle intervention — heartbeat after >60 s of inactivity');
-  info('artificially aging last_input_at to 120 s ago in Redis...');
-
-  const currentSession = await getSession(sessionId);
-  if (currentSession) {
-    const agedSession = {
-      ...currentSession,
-      last_input_at: new Date(Date.now() - 120_000).toISOString(),
-    };
-    await setSession(sessionId, agedSession);
-    pass('Redis session last_input_at set to 120 s ago');
-  }
-
-  const hb = await api('POST', `/api/sessions/${sessionId}/heartbeat`, {});
-  if (hb.status !== 200) fail('heartbeat', hb.status, hb.data);
-  const hbResult = hb.data as { intervention: unknown };
-  pass(`heartbeat response  intervention=${JSON.stringify(hbResult.intervention)}`);
-
-  if (hbResult.intervention) {
-    pass('idle intervention_events row written (trigger_type=idle, idle_streak=120s > threshold=60s)');
-  }
-
   // Verify intervention rows in DB
   const interventions = await pool.query<{
     trigger_type: string; trigger_value: unknown; created_at: Date;
@@ -261,7 +238,7 @@ async function main() {
       ORDER BY created_at`,
     [studentId],
   );
-  section('10  Intervention log (DB audit trail)');
+  section('9  Intervention log (DB audit trail)');
   if (interventions.rows.length === 0) {
     info('no intervention rows found');
   } else {
@@ -282,14 +259,13 @@ async function main() {
   Sprint 2 — Adaptive Engine
     [PASS] Adaptive config   thresholds derived from student profile at write time
     [PASS] Skill tier        correct × 2 with 0 hints → tier advances (hysteresis)
-    [PASS] Session + Redis   created, seeded, TTL extended on heartbeat
+    [PASS] Session + Redis   created and seeded
     [PASS] Error-streak      consecutive errors ≥ threshold → intervention logged
-    [PASS] Idle detection    heartbeat computes idle streak → intervention logged
 
   Next: Sprint 3 — AI Tutor (May 12)
     [ ] POST /api/hints   — streamed haiku hint, reads profile + Redis state
     [ ] POST /api/feedback — streamed sonnet feedback, names error from taxonomy
-    [ ] Wire idle/error interventions → auto-deliver hint to client
+    [ ] Wire error interventions → auto-deliver hint to client
   `);
 
   // ── Cleanup ───────────────────────────────────────────────────────────────

@@ -6,5 +6,6 @@ dist/
 **/.DS_Store
 tsconfig.tsbuildinfo
 logs/
+.local-postgres/
 AGENTS.MD
 AGENTS.MD

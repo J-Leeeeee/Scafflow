@@ -263,6 +263,72 @@ describe('POST /api/problems/:id/steps/:stepId/submit', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ correct: null, ungraded: true }));
   });
 
+  it('drawing_task: marks correct when short and all loops are labeled', async () => {
+    (mockPool.query as jest.Mock)
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 'step-draw',
+          step_type: 'drawing_task',
+          options: null,
+          ground_truth_answer: null,
+          tolerance: null,
+        }],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+    const req = {
+      params: { id: 'p1', stepId: 'step-draw' },
+      body: {
+        session_id: 's1',
+        submitted_value: JSON.stringify({ isShorted: true, loops: { 0: 'i1', 1: 'i2', 2: 'i3' } }),
+        time_spent_s: 30,
+      },
+      studentId: 'stu-1',
+    } as unknown as AuthRequest;
+    const res = makeRes();
+    await submitStep(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      correct: true,
+      ungraded: false,
+      misconception_hint: null,
+    }));
+  });
+
+  it('drawing_task: marks incorrect when short is missing', async () => {
+    (mockPool.query as jest.Mock)
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 'step-draw',
+          step_type: 'drawing_task',
+          options: null,
+          ground_truth_answer: null,
+          tolerance: null,
+        }],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ attempts_used: 1 }] });
+    const req = {
+      params: { id: 'p1', stepId: 'step-draw' },
+      body: {
+        session_id: 's1',
+        submitted_value: JSON.stringify({ isShorted: false, loops: { 0: 'i1', 1: 'i2', 2: 'i3' } }),
+        time_spent_s: 30,
+      },
+      studentId: 'stu-1',
+    } as unknown as AuthRequest;
+    const res = makeRes();
+    await submitStep(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      correct: false,
+      ungraded: false,
+      misconception_hint: 'Click terminal a, then terminal b to short them together.',
+      attempts_remaining: 4,
+    }));
+  });
+
   it('planning: always marks correct=true', async () => {
     (mockPool.query as jest.Mock)
       .mockResolvedValueOnce({

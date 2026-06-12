@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -19,7 +19,11 @@ function issueToken(studentId: string): string {
   });
 }
 
-export async function register(req: Request, res: Response): Promise<void> {
+export async function register(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   const { email, password, display_name, course_level, consent } = req.body as {
     email?: string;
     password?: string;
@@ -30,6 +34,11 @@ export async function register(req: Request, res: Response): Promise<void> {
 
   if (!email || !password) {
     res.status(400).json({ error: 'email and password are required' });
+    return;
+  }
+
+  if (!process.env.JWT_SECRET) {
+    res.status(500).json({ error: 'Internal server error' });
     return;
   }
 
@@ -101,9 +110,10 @@ export async function register(req: Request, res: Response): Promise<void> {
       );
     }
 
+    const token = issueToken(studentId);
+
     await client.query('COMMIT');
 
-    const token = issueToken(studentId);
     res
       .cookie('token', token, {
         httpOnly: true,
@@ -115,7 +125,7 @@ export async function register(req: Request, res: Response): Promise<void> {
       .json({ id: studentId });
   } catch (err) {
     await client.query('ROLLBACK');
-    throw err;
+    next(err);
   } finally {
     client.release();
   }

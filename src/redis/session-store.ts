@@ -47,10 +47,6 @@ export async function setSession(sessionId: string, session: RedisSession): Prom
   await redis.set(key, JSON.stringify(session), 'EX', SESSION_TTL_S);
 }
 
-export async function extendTTL(sessionId: string): Promise<void> {
-  await redis.expire(sessionKey(sessionId), SESSION_TTL_S);
-}
-
 export async function deleteSession(sessionId: string): Promise<void> {
   await redis.del(sessionKey(sessionId));
 }

@@ -8,6 +8,7 @@ import { Request, Response } from 'express';
 import pool from '../../db/client';
 import { AuthRequest } from '../auth/middleware';
 import { getSession, setSession } from '../../redis/session-store';
+import { gradeCircuitCanvas, parseCircuitCanvasState } from '../../lib/circuit-canvas';
 import type { LearnerProfile, McqOption, StepType } from '../../types/schema';
 
 const STEP_ATTEMPT_BUDGET = 5;
@@ -145,6 +146,7 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
 
   // Grade
   let correct: boolean | null;
+  let misconceptionHint: string | null = null;
   switch (step.step_type) {
     case 'mcq': {
       const selected = String(submitted_value).trim().toUpperCase();
@@ -171,6 +173,18 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
     case 'open':
       correct = true;                                                // acknowledgment-only
       break;
+    case 'drawing_task': {
+      const canvasState = parseCircuitCanvasState(submitted_value);
+      if (!canvasState) {
+        correct = false;
+        misconceptionHint = 'Submit a valid circuit canvas response.';
+      } else {
+        const grade = gradeCircuitCanvas(canvasState);
+        correct = grade.correct;
+        misconceptionHint = grade.hint;
+      }
+      break;
+    }
   }
 
   await pool.query(
@@ -228,7 +242,7 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
     correct,
     ungraded: correct === null,
     next_step_id: correct !== false ? nextStepId : null,
-    misconception_hint: null,                                        // wired in Sprint 3
+    misconception_hint: misconceptionHint,
     ...attemptMetadata,
   });
 }

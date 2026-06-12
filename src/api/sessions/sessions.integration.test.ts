@@ -49,39 +49,6 @@ describe('POST /api/sessions', () => {
   });
 });
 
-// ── POST /api/sessions/:id/heartbeat ─────────────────────────────────────────
-
-describe('POST /api/sessions/:id/heartbeat', () => {
-  it('200 with no intervention under idle threshold', async () => {
-    const agent = await registerAndLogin('hb@uw.edu');
-    const sessRes = await agent.post('/api/sessions').send({});
-    const { session_id } = sessRes.body as { session_id: string };
-
-    const res = await agent.post(`/api/sessions/${session_id}/heartbeat`);
-    expect(res.status).toBe(200);
-    // No idle time has passed — should not trigger an intervention.
-    expect(res.body.intervention).toBeNull();
-  });
-
-  it('404 when session does not exist', async () => {
-    const agent = await registerAndLogin('hb2@uw.edu');
-    const res = await agent.post('/api/sessions/00000000-0000-0000-0000-000000000000/heartbeat');
-    expect(res.status).toBe(404);
-  });
-
-  it('404 when session belongs to a different student', async () => {
-    // Create a session as student A.
-    const agentA = await registerAndLogin('hbA@uw.edu');
-    const sessRes = await agentA.post('/api/sessions').send({});
-    const { session_id } = sessRes.body as { session_id: string };
-
-    // Student B tries to heartbeat student A's session.
-    const agentB = await registerAndLogin('hbB@uw.edu');
-    const res = await agentB.post(`/api/sessions/${session_id}/heartbeat`);
-    expect(res.status).toBe(404);
-  });
-});
-
 // ── GET /api/sessions/:id ─────────────────────────────────────────────────────
 
 describe('GET /api/sessions/:id', () => {

@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import { InteractiveCircuitCanvas } from '../components/InteractiveCircuitCanvas';
 import { Scratchpad } from '../design/components/Scratchpad';
 import { Sidebar } from '../design/components/Sidebar';
 import { StepCard } from '../design/components/StepCard';
 import { WorkspaceFrame } from '../design/components/WorkspaceFrame';
-import { mockSteps } from '../design/mockSteps';
-import type { Feedback as FeedbackData, Step, StepState } from '../design/types';
+import { stepsByProfile, type ProfileId } from '../design/mockSteps';
+import type { Feedback as FeedbackData, DrawingTaskStepDef, Step, StepState } from '../design/types';
+import {
+  gradeCircuitCanvas,
+  hasCircuitCanvasInteraction,
+  parseCircuitCanvasState,
+} from '../lib/circuitCanvas';
 
 const ATTEMPT_BUDGET = 5;
 
@@ -34,15 +40,31 @@ type TextInputStep = Extract<
  *
  * No backend integration — this is the visual contract that stage 4 will
  * wire to `problems.getScaffold` and `problems.submitStep`.
+ *
+ * The `?profile=` query param (1 | 2 | 3) selects which profile's questions to
+ * render. A future onboarding survey just navigates to `/problemset?profile=N`.
  */
+const VALID_PROFILES: readonly string[] = ['1', '2', '3'];
+
 export function DesignProblemRoute() {
+  const [searchParams] = useSearchParams();
+  const raw = searchParams.get('profile') ?? '1';
+  const profile = (VALID_PROFILES.includes(raw) ? raw : '1') as ProfileId;
+  // Remount on profile change so all per-step answer state resets cleanly.
+  return <ProblemWorkspace key={profile} profile={profile} />;
+}
+
+function ProblemWorkspace({ profile }: { profile: ProfileId }) {
   const navigate = useNavigate();
+  const mockSteps = stepsByProfile[profile];
   const [activeIndex, setActiveIndex] = useState(0);
   const [statesByStep, setStatesByStep] = useState<Record<number, StepState>>({});
   const [mcqSelectionsByStep, setMcqSelectionsByStep] = useState<Record<number, number>>({});
   const [mcqFeedbackByStep, setMcqFeedbackByStep] = useState<Record<number, FeedbackData>>({});
   const [textAnswersByStep, setTextAnswersByStep] = useState<Record<number, string[]>>({});
   const [textFeedbackByStep, setTextFeedbackByStep] = useState<Record<number, FeedbackData>>({});
+  const [canvasStateByStep, setCanvasStateByStep] = useState<Record<number, string>>({});
+  const [drawingFeedbackByStep, setDrawingFeedbackByStep] = useState<Record<number, FeedbackData>>({});
   const [incorrectAttemptsByStep, setIncorrectAttemptsByStep] = useState<Record<number, number>>({});
 
   const step = mockSteps[activeIndex];
@@ -53,7 +75,9 @@ export function DesignProblemRoute() {
     ? textAnswersByStep[step.number] ?? emptyTextAnswers(step)
     : undefined;
   const textFeedback = isTextInputStep(step) ? textFeedbackByStep[step.number] : undefined;
-  const feedbackOverride = mcqFeedback ?? textFeedback;
+  const drawingFeedback = step.kind === 'drawing_task' ? drawingFeedbackByStep[step.number] : undefined;
+  const canvasState = step.kind === 'drawing_task' ? canvasStateByStep[step.number] : undefined;
+  const feedbackOverride = mcqFeedback ?? textFeedback ?? drawingFeedback;
 
   function advanceState() {
     if (step.kind === 'mcq') {
@@ -63,6 +87,11 @@ export function DesignProblemRoute() {
 
     if (isTextInputStep(step)) {
       submitTextAnswers();
+      return;
+    }
+
+    if (step.kind === 'drawing_task') {
+      submitDrawingTask();
       return;
     }
 
@@ -127,9 +156,47 @@ export function DesignProblemRoute() {
     setStatesByStep((prev) => ({ ...prev, [step.number]: correct ? 'checked' : 'filled' }));
   }
 
+  function changeCanvasState(value: string) {
+    if (step.kind !== 'drawing_task') return;
+
+    setCanvasStateByStep((prev) => ({ ...prev, [step.number]: value }));
+    setDrawingFeedbackByStep((prev) => {
+      const next = { ...prev };
+      delete next[step.number];
+      return next;
+    });
+    setStatesByStep((prev) => ({ ...prev, [step.number]: 'filled' }));
+  }
+
+  function submitDrawingTask() {
+    if (step.kind !== 'drawing_task') return;
+
+    const parsed = parseCircuitCanvasState(canvasStateByStep[step.number] ?? null);
+    if (!parsed) return;
+
+    const { correct, hint } = gradeCircuitCanvas(parsed);
+    const feedback = correct
+      ? step.checked.feedback
+      : drawingIncorrectFeedback(step, hint);
+    setDrawingFeedbackByStep((prev) => ({
+      ...prev,
+      [step.number]: feedback,
+    }));
+    setStatesByStep((prev) => ({ ...prev, [step.number]: correct ? 'checked' : 'filled' }));
+  }
+
   function recordIncorrectAttempt(stepNumber: number): FeedbackData {
     const attemptsUsed = (incorrectAttemptsByStep[stepNumber] ?? 0) + 1;
     setIncorrectAttemptsByStep((prev) => ({ ...prev, [stepNumber]: attemptsUsed }));
+    return incorrectAttemptFeedback(attemptsUsed);
+  }
+
+  function drawingIncorrectFeedback(stepDef: DrawingTaskStepDef, hint: string | null): FeedbackData {
+    const attemptsUsed = (incorrectAttemptsByStep[stepDef.number] ?? 0) + 1;
+    setIncorrectAttemptsByStep((prev) => ({ ...prev, [stepDef.number]: attemptsUsed }));
+    if (hint && attemptsUsed === 1) {
+      return { tone: 'error', title: 'Not quite', body: hint };
+    }
     return incorrectAttemptFeedback(attemptsUsed);
   }
 
@@ -143,6 +210,7 @@ export function DesignProblemRoute() {
       sidebar={
         <Sidebar
           stepNumber={step.number}
+          totalSteps={mockSteps.length}
           circuitOverlay={step.circuitOverlay}
           stepCard={
             <StepCard
@@ -154,6 +222,7 @@ export function DesignProblemRoute() {
               actionDisabled={
                 (step.kind === 'mcq' && selectedOptionIndex === undefined)
                 || (isTextInputStep(step) && (!textAnswers || !hasRequiredTextAnswers(step, textAnswers)))
+                || (step.kind === 'drawing_task' && !hasDrawingInteraction(canvasState))
               }
               onOptionSelect={selectMcqOption}
               onTextAnswerChange={changeTextAnswer}
@@ -166,7 +235,17 @@ export function DesignProblemRoute() {
           isLast={activeIndex === mockSteps.length - 1}
         />
       }
-      workspace={<Scratchpad />}
+      workspace={
+        step.kind === 'drawing_task' ? (
+          <InteractiveCircuitCanvas
+            key={step.number}
+            initialState={canvasState}
+            onChange={changeCanvasState}
+          />
+        ) : (
+          <Scratchpad />
+        )
+      }
       onBack={() => navigate('/dashboard')}
     />
   );
@@ -226,11 +305,16 @@ function textAnswersAreCorrect(step: TextInputStep, values: string[]) {
 }
 
 function normalizeText(value: string | undefined) {
-  return (value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+  return (value ?? '').trim().replace(/\s+/g, ' ').replace(/_/g, '').toLowerCase();
 }
 
 function normalizeEquation(value: string | undefined) {
   return (value ?? '').replace(/\s+/g, '');
+}
+
+function hasDrawingInteraction(canvasState: string | undefined) {
+  const parsed = parseCircuitCanvasState(canvasState ?? null);
+  return parsed ? hasCircuitCanvasInteraction(parsed) : false;
 }
 
 function incorrectAttemptFeedback(attemptsUsed: number): FeedbackData {

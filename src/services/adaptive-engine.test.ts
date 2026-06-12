@@ -1,4 +1,4 @@
-import { checkIdleThreshold, checkAfterSubmit } from './adaptive-engine';
+import { checkAfterSubmit } from './adaptive-engine';
 import pool from '../db/client';
 
 jest.mock('../db/client', () => ({
@@ -9,45 +9,6 @@ jest.mock('../db/client', () => ({
 const mockPool = pool as jest.Mocked<typeof pool>;
 
 beforeEach(() => jest.clearAllMocks());
-
-// ── checkIdleThreshold ────────────────────────────────────────────────────────
-
-describe('checkIdleThreshold', () => {
-  it('returns null when adaptive_config row not found', async () => {
-    (mockPool.query as jest.Mock).mockResolvedValue({ rows: [] });
-    const result = await checkIdleThreshold('sess-1', 'stu-1', 120);
-    expect(result).toBeNull();
-  });
-
-  it('returns null when idle streak is below threshold', async () => {
-    (mockPool.query as jest.Mock).mockResolvedValue({ rows: [{ idle_threshold_s: 90 }] });
-    const result = await checkIdleThreshold('sess-1', 'stu-1', 60);
-    expect(result).toBeNull();
-    expect(mockPool.query).toHaveBeenCalledTimes(1); // no INSERT
-  });
-
-  it('logs intervention and returns trigger when idle threshold breached', async () => {
-    (mockPool.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ idle_threshold_s: 90 }] })
-      .mockResolvedValueOnce({ rows: [] }); // INSERT
-
-    const result = await checkIdleThreshold('sess-1', 'stu-1', 95);
-    expect(result).toEqual({ type: 'idle', idleStreakS: 95 });
-
-    const insertCall = (mockPool.query as jest.Mock).mock.calls[1];
-    expect((insertCall[0] as string)).toContain('intervention_events');
-    expect(insertCall[1][2]).toBe('idle');
-  });
-
-  it('triggers exactly at threshold (>=)', async () => {
-    (mockPool.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ idle_threshold_s: 90 }] })
-      .mockResolvedValueOnce({ rows: [] });
-
-    const result = await checkIdleThreshold('sess-1', 'stu-1', 90);
-    expect(result?.type).toBe('idle');
-  });
-});
 
 // ── checkAfterSubmit ──────────────────────────────────────────────────────────
 

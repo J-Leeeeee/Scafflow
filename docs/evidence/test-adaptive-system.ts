@@ -190,37 +190,7 @@ async function createTestStudent(): Promise<TestStudent> {
 
 type ScenarioResult = { ok: true } | { ok: false; reason: string };
 
-// S1 — Idle breach. Backdate Redis last_input_at, then heartbeat.
-async function scenarioIdle(): Promise<ScenarioResult> {
-  const s = await createTestStudent();
-
-  const session = await readRedisSession(s.sessionId);
-  session.last_input_at = new Date(Date.now() - 120_000).toISOString(); // 120s ago, threshold is 90
-  await writeRedisSession(s.sessionId, session);
-
-  const hb = await http<{ intervention: { type: string; idleStreakS: number } | null }>(
-    'POST', `/api/sessions/${s.sessionId}/heartbeat`, {}, s.cookie,
-  );
-  if (hb.status !== 200) return { ok: false, reason: `heartbeat status ${hb.status}` };
-  if (hb.body.intervention?.type !== 'idle') {
-    return { ok: false, reason: `expected idle, got ${JSON.stringify(hb.body.intervention)}` };
-  }
-
-  const rows = await getInterventions(s.studentId);
-  const idleRows = rows.filter(r => r.trigger_type === 'idle');
-  if (idleRows.length !== 1) {
-    return { ok: false, reason: `expected 1 idle row, got ${idleRows.length}` };
-  }
-  const row = idleRows[0];
-  if (row.response_type !== 'hint') return { ok: false, reason: `response_type=${row.response_type}` };
-  if (!row.trigger_value || (row.trigger_value.idleStreakS ?? 0) < 90) {
-    return { ok: false, reason: `idleStreakS=${row.trigger_value?.idleStreakS}` };
-  }
-  if (!row.session_id) return { ok: false, reason: 'missing session_id' };
-  return { ok: true };
-}
-
-// S2 — Error streak. Submit 3 wrong answers.
+// S1 — Error streak. Submit 3 wrong answers.
 async function scenarioErrorStreak(): Promise<ScenarioResult> {
   const s = await createTestStudent();
 
@@ -253,7 +223,7 @@ async function scenarioErrorStreak(): Promise<ScenarioResult> {
   return { ok: true };
 }
 
-// S3 — Hint budget exhausted. Set Redis hints_used=3, submit correct (so error_streak does not fire first).
+// S2 — Hint budget exhausted. Set Redis hints_used=3, submit correct (so error_streak does not fire first).
 async function scenarioHintBudget(): Promise<ScenarioResult> {
   const s = await createTestStudent();
 
@@ -291,24 +261,11 @@ async function scenarioHintBudget(): Promise<ScenarioResult> {
   return { ok: true };
 }
 
-// S4 — Clean run (negative). 3 problems, all correct, regular heartbeats. Zero interventions.
+// S3 — Clean run (negative). 3 problems, all correct. Zero interventions.
 async function scenarioClean(): Promise<ScenarioResult> {
   const s = await createTestStudent();
 
   for (let i = 0; i < 3; i++) {
-    // Simulate an engaged student: refresh last_input_at right before heartbeat
-    const sess = await readRedisSession(s.sessionId);
-    sess.last_input_at = new Date().toISOString();
-    await writeRedisSession(s.sessionId, sess);
-
-    const hb = await http<{ intervention: unknown }>(
-      'POST', `/api/sessions/${s.sessionId}/heartbeat`, {}, s.cookie,
-    );
-    if (hb.status !== 200) return { ok: false, reason: `heartbeat ${i}: ${hb.status}` };
-    if (hb.body.intervention !== null) {
-      return { ok: false, reason: `unexpected heartbeat intervention ${i}: ${JSON.stringify(hb.body.intervention)}` };
-    }
-
     const next = await http<{ id: string }>('GET', '/api/problems/next', undefined, s.cookie);
     if (next.status !== 200) return { ok: false, reason: `next ${i}: ${next.status}` };
     const problemId = next.body.id;
@@ -333,7 +290,7 @@ async function scenarioClean(): Promise<ScenarioResult> {
   return { ok: true };
 }
 
-// S5 — Checkin recalculates thresholds. POST stress=2 → adaptive_config tightens to high-need values.
+// S4 — Checkin recalculates thresholds. POST stress=2 → adaptive_config tightens to high-need values.
 async function scenarioCheckin(): Promise<ScenarioResult> {
   const s = await createTestStudent();
 
@@ -369,7 +326,7 @@ async function scenarioCheckin(): Promise<ScenarioResult> {
   return { ok: true };
 }
 
-// S6 — Tier up & down via hysteresis. Uses two topics on the same student.
+// S5 — Tier up & down via hysteresis. Uses two topics on the same student.
 async function scenarioTierUpDown(): Promise<ScenarioResult> {
   const s = await createTestStudent();
 
@@ -447,12 +404,11 @@ interface Scenario {
 }
 
 const SCENARIOS: Scenario[] = [
-  { id: 1, name: 'Idle',             run: scenarioIdle },
-  { id: 2, name: 'Error streak',     run: scenarioErrorStreak },
-  { id: 3, name: 'Hint budget',      run: scenarioHintBudget },
-  { id: 4, name: 'Clean (negative)', run: scenarioClean },
-  { id: 5, name: 'Checkin recalc',   run: scenarioCheckin },
-  { id: 6, name: 'Tier up & down',   run: scenarioTierUpDown },
+  { id: 1, name: 'Error streak',     run: scenarioErrorStreak },
+  { id: 2, name: 'Hint budget',      run: scenarioHintBudget },
+  { id: 3, name: 'Clean (negative)', run: scenarioClean },
+  { id: 4, name: 'Checkin recalc',   run: scenarioCheckin },
+  { id: 5, name: 'Tier up & down',   run: scenarioTierUpDown },
 ];
 
 async function pingServer(): Promise<void> {

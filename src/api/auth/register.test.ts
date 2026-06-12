@@ -20,6 +20,10 @@ function makeRes(): jest.Mocked<Response> {
   return res;
 }
 
+function makeNext() {
+  return jest.fn();
+}
+
 function makeClientMock(studentId = 'stu-1') {
   const q = jest.fn()
     .mockResolvedValueOnce({ rows: [] })                     // BEGIN
@@ -39,15 +43,24 @@ describe('POST /api/auth/register', () => {
   it('returns 400 when email is missing', async () => {
     const req = { body: { password: 'pw' }, ip: '' } as unknown as Request;
     const res = makeRes();
-    await register(req, res);
+    await register(req, res, makeNext());
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when password is missing', async () => {
     const req = { body: { email: 'a@b.com' }, ip: '' } as unknown as Request;
     const res = makeRes();
-    await register(req, res);
+    await register(req, res, makeNext());
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 500 when JWT_SECRET is not set', async () => {
+    delete process.env.JWT_SECRET;
+    const req = { body: { email: 'a@b.com', password: 'pw' }, ip: '' } as unknown as Request;
+    const res = makeRes();
+    await register(req, res, makeNext());
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(mockPool.connect).not.toHaveBeenCalled();
   });
 
   it('returns 409 when email already registered', async () => {
@@ -61,7 +74,7 @@ describe('POST /api/auth/register', () => {
 
     const req = { body: { email: 'a@b.com', password: 'pw' }, ip: '' } as unknown as Request;
     const res = makeRes();
-    await register(req, res);
+    await register(req, res, makeNext());
     expect(res.status).toHaveBeenCalledWith(409);
   });
 
@@ -73,7 +86,7 @@ describe('POST /api/auth/register', () => {
       ip: '127.0.0.1',
     } as unknown as Request;
     const res = makeRes();
-    await register(req, res);
+    await register(req, res, makeNext());
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.objectContaining({ httpOnly: true }));
   });

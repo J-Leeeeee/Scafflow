@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CircuitDiagram } from '../design/components/CircuitDiagram';
 import { CircuitChoiceTile } from '../design/components/OptionCircuit';
 import type { CircuitOptionKind } from '../design/types';
+import { InteractiveCircuitCanvas } from '../components/InteractiveCircuitCanvas';
 import {
   ApiError,
   problems,
@@ -12,6 +13,11 @@ import {
   type ScaffoldStep,
   type StepSubmitResult,
 } from '../lib/api';
+import {
+  hasCircuitCanvasInteraction,
+  parseCircuitCanvasState,
+} from '../lib/circuitCanvas';
+import { useScratchpadCanvas, type ScratchpadTool } from '../hooks/useScratchpadCanvas';
 
 const FALLBACK_OPTIONS = [
   { key: 'A', text: 'Voltage source with a series resistance' },
@@ -92,18 +98,10 @@ export function ProblemRoute() {
     return () => { active = false; };
   }, [id]);
 
-  // Heartbeat every 30 s + end session on unmount.
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const sid = sessionIdRef.current;
-      if (sid) sessions.heartbeat(sid).catch(() => {});
-    }, 30_000);
-
-    return () => {
-      clearInterval(interval);
-      const sid = sessionIdRef.current;
-      if (sid) sessions.end(sid).catch(() => {});
-    };
+  // End session on unmount.
+  useEffect(() => () => {
+    const sid = sessionIdRef.current;
+    if (sid) sessions.end(sid).catch(() => {});
   }, []);
 
   const steps = scaffold?.steps ?? [];
@@ -245,10 +243,14 @@ export function ProblemRoute() {
 
                       <button
                         type="submit"
-                        disabled={submitting || valueForSubmit(activeStep, activeAnswer) === null}
+                        disabled={
+                          submitting
+                          || valueForSubmit(activeStep, activeAnswer) === null
+                          || (activeStep.step_type === 'drawing_task' && !hasDrawingInteraction(activeAnswer))
+                        }
                         className="mt-4 h-[50px] w-full rounded-[10px] bg-[#615FFF] text-[15px] font-bold text-white shadow-[0_4px_6px_rgba(0,0,0,0.10)] transition hover:bg-[#5350E6] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {submitting ? 'Checking...' : activeResult ? 'Check Again' : 'Confirm Selection'}
+                        {submitButtonLabel(activeStep, submitting, activeResult)}
                       </button>
                     </>
                   ) : (
@@ -289,7 +291,15 @@ export function ProblemRoute() {
             </div>
           </aside>
 
-          <Scratchpad completedCount={completedCount} totalCount={steps.length} />
+          {activeStep?.step_type === 'drawing_task' ? (
+            <InteractiveCircuitCanvas
+              key={activeStep.id}
+              initialState={activeAnswer}
+              onChange={(val) => setAnswer(activeStep.id, val)}
+            />
+          ) : (
+            <Scratchpad completedCount={completedCount} totalCount={steps.length} />
+          )}
         </div>
       )}
     </ProblemShell>
@@ -365,6 +375,10 @@ function StepAnswer({
   value: string;
   onChange: (value: string) => void;
 }) {
+  if (step.step_type === 'drawing_task') {
+    return null; // The input is handled via InteractiveCircuitCanvas
+  }
+
   if (step.step_type === 'mcq') {
     const options = step.options && step.options.length > 0 ? step.options : FALLBACK_OPTIONS;
     return (
@@ -412,11 +426,12 @@ function StepAnswer({
 }
 
 function Feedback({ result }: { result: StepSubmitResult }) {
-  const message = result.ungraded
-    ? 'Saved. Keep going when you are ready.'
-    : result.correct
-      ? 'Nice work. This step is accepted.'
-      : incorrectFeedbackMessage(result.attempts_remaining ?? 0);
+  const message = result.misconception_hint
+    ?? (result.ungraded
+      ? 'Saved. Keep going when you are ready.'
+      : result.correct
+        ? 'Nice work. This step is accepted.'
+        : incorrectFeedbackMessage(result.attempts_remaining ?? 0));
   const tone = result.correct === false
     ? 'border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]'
     : 'border-[#BBF7D0] bg-[#F0FDF4] text-[#166534]';
@@ -433,118 +448,10 @@ function incorrectFeedbackMessage(attemptsRemaining: number) {
   return `Not quite yet. ${n} ${n === 1 ? 'attempt' : 'attempts'} remaining.`;
 }
 
-type ScratchpadTool = 'pen' | 'eraser';
-
 function Scratchpad({ completedCount, totalCount }: { completedCount: number; totalCount: number }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const isDrawingRef = useRef(false);
-  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const [activeTool, setActiveTool] = useState<ScratchpadTool>('pen');
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = canvas?.parentElement;
-    if (!canvas || !container) return;
-
-    function resizeCanvas() {
-      if (!canvas || !container) return;
-      const rect = container.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-
-      const previous = document.createElement('canvas');
-      previous.width = canvas.width;
-      previous.height = canvas.height;
-      previous.getContext('2d')?.drawImage(canvas, 0, 0);
-
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
-      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      if (previous.width > 0 && previous.height > 0) {
-        ctx.drawImage(previous, 0, 0, previous.width, previous.height, 0, 0, canvas.width, canvas.height);
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    resizeCanvas();
-    const observer = new ResizeObserver(resizeCanvas);
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, []);
-
-  function getPoint(e: ReactPointerEvent<HTMLCanvasElement>) {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  }
-
-  function drawPoint(point: { x: number; y: number }) {
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    ctx.save();
-    ctx.globalCompositeOperation = activeTool === 'eraser' ? 'destination-out' : 'source-over';
-    ctx.fillStyle = activeTool === 'eraser' ? 'rgba(0,0,0,1)' : '#111827';
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, activeTool === 'eraser' ? 11 : 1.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function drawLine(from: { x: number; y: number }, to: { x: number; y: number }) {
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.globalCompositeOperation = activeTool === 'eraser' ? 'destination-out' : 'source-over';
-    ctx.strokeStyle = activeTool === 'eraser' ? 'rgba(0,0,0,1)' : '#111827';
-    ctx.lineWidth = activeTool === 'eraser' ? 22 : 3;
-    ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    ctx.lineTo(to.x, to.y);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function handlePointerDown(e: ReactPointerEvent<HTMLCanvasElement>) {
-    const point = getPoint(e);
-    if (!point) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    isDrawingRef.current = true;
-    lastPointRef.current = point;
-    drawPoint(point);
-  }
-
-  function handlePointerMove(e: ReactPointerEvent<HTMLCanvasElement>) {
-    if (!isDrawingRef.current) return;
-    const point = getPoint(e);
-    const prev = lastPointRef.current;
-    if (!point || !prev) return;
-    drawLine(prev, point);
-    lastPointRef.current = point;
-  }
-
-  function stopDrawing(e: ReactPointerEvent<HTMLCanvasElement>) {
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    }
-    isDrawingRef.current = false;
-    lastPointRef.current = null;
-  }
-
-  function clearCanvas() {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-  }
+  const { canvasRef, handlePointerDown, handlePointerMove, stopDrawing, clearCanvas } =
+    useScratchpadCanvas(activeTool);
 
   return (
     <main className="min-w-0 flex-1 bg-[#F8F9FA] p-4">
@@ -615,6 +522,22 @@ function displayStepPrompt(step: ScaffoldStep) {
   return step.prompt_text;
 }
 
+function submitButtonLabel(
+  step: ScaffoldStep,
+  submitting: boolean,
+  result: StepSubmitResult | null,
+) {
+  if (submitting) return 'Checking...';
+  if (result) return 'Check Again';
+  if (step.step_type === 'drawing_task') return 'Check Drawing';
+  return 'Confirm Selection';
+}
+
+function hasDrawingInteraction(canvasState: string) {
+  const parsed = parseCircuitCanvasState(canvasState || null);
+  return parsed ? hasCircuitCanvasInteraction(parsed) : false;
+}
+
 function valueForSubmit(step: ScaffoldStep, value: string) {
   if (step.step_type === 'planning') return value.trim() || 'acknowledged';
   if (step.step_type === 'open') return value.trim() || null;
@@ -622,5 +545,6 @@ function valueForSubmit(step: ScaffoldStep, value: string) {
     const numeric = Number(value);
     return Number.isFinite(numeric) ? numeric : null;
   }
+  if (step.step_type === 'drawing_task') return value || null;
   return value || null;
 }

@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
 import pool from '../../db/client';
-import { getSession, setSession, extendTTL, deleteSession } from '../../redis/session-store';
+import { getSession, setSession, deleteSession } from '../../redis/session-store';
 import { AuthRequest } from '../auth/middleware';
 import type { RedisSession } from '../../types/schema';
-import { checkIdleThreshold } from '../../services/adaptive-engine';
-import { updateIdleStreak } from '../../services/cognitive-state';
 
 // POST /api/sessions
 // Body: { problem_id? }
@@ -34,40 +32,6 @@ export async function createSession(req: Request, res: Response): Promise<void> 
 
   await setSession(sessionId, redisSession);
   res.status(201).json({ session_id: sessionId });
-}
-
-// POST /api/sessions/:id/heartbeat
-// Extends Redis TTL and updates last_seen_at in Postgres every 30 s.
-export async function heartbeat(req: Request, res: Response): Promise<void> {
-  const studentId = (req as AuthRequest).studentId;
-  const { id: sessionId } = req.params;
-
-  const check = await pool.query(
-    'SELECT id FROM sessions WHERE id=$1 AND student_id=$2 AND ended_at IS NULL',
-    [sessionId, studentId],
-  );
-  if (check.rows.length === 0) {
-    res.status(404).json({ error: 'Session not found' });
-    return;
-  }
-
-  await pool.query('UPDATE sessions SET last_seen_at=now() WHERE id=$1', [sessionId]);
-  await extendTTL(sessionId);
-
-  // Compute idle streak and check threshold
-  const redisSession = await getSession(sessionId);
-  let intervention = null;
-  if (redisSession?.last_input_at) {
-    const idleStreakS = Math.floor((Date.now() - new Date(redisSession.last_input_at).getTime()) / 1000);
-    const updated = { ...redisSession, idle_streak_seconds: idleStreakS };
-    await setSession(sessionId, updated);
-    intervention = await checkIdleThreshold(sessionId, studentId, idleStreakS);
-    if (intervention) {
-      await updateIdleStreak(studentId, idleStreakS);
-    }
-  }
-
-  res.status(200).json({ intervention: intervention ?? null });
 }
 
 // POST /api/sessions/:id/end

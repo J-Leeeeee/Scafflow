@@ -1,3 +1,4 @@
+import { InteractiveCircuitCanvas } from '../components/InteractiveCircuitCanvas';
 import { Scratchpad } from '../design/components/Scratchpad';
 import { Sidebar } from '../design/components/Sidebar';
 import { StepCard } from '../design/components/StepCard';
@@ -91,13 +92,20 @@ function FrameThumbnail({ step, state }: { step: Step; state: StepState }) {
             sidebar={
               <Sidebar
                 stepNumber={step.number}
+                totalSteps={mockSteps.length}
                 circuitOverlay={step.circuitOverlay}
                 stepCard={<StepCard step={step} state={state} />}
                 isFirst={step.number === 1}
                 isLast={step.number === mockSteps.length}
               />
             }
-            workspace={<Scratchpad />}
+            workspace={
+              step.kind === 'drawing_task' ? (
+                <InteractiveCircuitCanvas onChange={() => {}} />
+              ) : (
+                <Scratchpad />
+              )
+            }
           />
         </div>
       </div>

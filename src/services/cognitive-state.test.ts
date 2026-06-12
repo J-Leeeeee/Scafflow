@@ -1,4 +1,4 @@
-import { decayWeight, behavioralStressScore, updateConsecutiveErrors, updateFromCheckin, updateIdleStreak, recalcStressAndThresholds } from './cognitive-state';
+import { decayWeight, behavioralStressScore, updateConsecutiveErrors, updateFromCheckin, recalcStressAndThresholds } from './cognitive-state';
 import pool from '../db/client';
 
 jest.mock('../db/client', () => ({
@@ -144,22 +144,6 @@ describe('updateConsecutiveErrors', () => {
     const incrCall = (mockPool.query as jest.Mock).mock.calls[0];
     expect((incrCall[0] as string)).toContain('consecutive_errors+1');
     expect((incrCall[0] as string)).toContain('idle_streak_s=0');
-  });
-});
-
-// ── updateIdleStreak ──────────────────────────────────────────────────────────
-
-describe('updateIdleStreak', () => {
-  it('writes idle_streak_s to cognitive_state and triggers recalc', async () => {
-    (mockPool.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [] }) // UPDATE idle_streak_s
-      .mockResolvedValueOnce({ rows: [] }); // recalc SELECT (no rows → early return)
-
-    await updateIdleStreak('stu-1', 120);
-
-    const updateCall = (mockPool.query as jest.Mock).mock.calls[0];
-    expect((updateCall[0] as string)).toContain('idle_streak_s');
-    expect(updateCall[1]).toEqual([120, 'stu-1']);
   });
 });
 

@@ -1,4 +1,4 @@
-import { getSession, setSession, extendTTL, deleteSession } from './session-store';
+import { getSession, setSession, deleteSession } from './session-store';
 
 jest.mock('./client', () => ({
   __esModule: true,
@@ -90,13 +90,6 @@ describe('setSession', () => {
       'EX',
       expect.any(Number),
     );
-  });
-});
-
-describe('extendTTL', () => {
-  it('calls expire on the session key', async () => {
-    await extendTTL('sess-4');
-    expect(mockRedis.expire).toHaveBeenCalledWith('session:sess-4', expect.any(Number));
   });
 });
 

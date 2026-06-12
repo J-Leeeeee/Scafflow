@@ -47,7 +47,7 @@ const STARTER_STEPS: StepSpec[] = [
   { step_type: 'open',     prompt_text: 'Write down the KCL equations and solve them.' },
   { step_type: 'numeric',  prompt_text: 'Find Vth (= Vab). Enter your value in volts.' },
   { step_type: 'mcq',      prompt_text: 'Now we need to find Rth. What is the most helpful next step / technique for finding Rth?', options: RTH_METHOD_OPTIONS },
-  { step_type: 'open',     prompt_text: 'Redraw the circuit diagram and label all mesh currents / node voltages needed to determine the short-circuit current.' },
+  { step_type: 'drawing_task', prompt_text: 'Redraw the circuit diagram and label all mesh currents / node voltages needed to determine the short-circuit current.' },
   { step_type: 'open',     prompt_text: 'Identify the supermesh in the circuit and write down the constraint equation.' },
   { step_type: 'open',     prompt_text: 'Write down the mesh-current equations and solve them.' },
   { step_type: 'numeric',  prompt_text: 'Find Isc (the short-circuit current). Enter your value in amperes.' },

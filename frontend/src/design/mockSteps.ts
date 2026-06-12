@@ -11,7 +11,7 @@ import type { Step } from './types';
  * the `prompt`, `helperText`, and structural fields become part of the
  * scaffold definition.
  */
-export const mockSteps: Step[] = [
+export const profile1Steps: Step[] = [
   {
     kind: 'mcq',
     number: 1,
@@ -54,18 +54,20 @@ export const mockSteps: Step[] = [
     },
   },
   {
-    kind: 'select_in_diagram',
+    kind: 'multi_value',
     number: 3,
     prompt: "Let's start from finding Vth.\nWhere is Vth in our diagram?",
-    helperText: 'Select the Vth in the circuit diagram below.',
-    actionLabel: 'Confirm Selection',
-    filled: { overlay: 'highlight_terminals_ab' },
+    helperText:
+      'Enter the voltage (in terms of its terminals) that corresponds to Vth in the circuit diagram above.',
+    actionLabel: 'Check Solution',
+    inputs: [{ label: 'Vth =', placeholder: 'e.g. Vxy' }],
+    filled: { values: ['Vab'] },
     checked: {
-      overlay: 'highlight_terminals_ab',
+      values: ['Vab'],
       feedback: {
         tone: 'success',
         title: 'Good',
-        body: 'Vth is the open-circuit voltage measured between terminals a and b.',
+        body: 'Vth is the open-circuit voltage measured between terminals a and b — Vab.',
       },
     },
   },
@@ -161,9 +163,8 @@ export const mockSteps: Step[] = [
     number: 9,
     prompt: 'Before we can find Rth, we need to find Isc.',
     helperText:
-      'Using the sketchpad on the right, redraw the circuit diagram and label all mesh currents/node voltages needed to determine the short-circuit current.',
+      'Using the interactive canvas on the right, short terminals a and b, then label all mesh currents needed to determine the short-circuit current.',
     actionLabel: 'Check Drawing',
-    circuitOverlay: 'highlight_terminals_ab',
     filled: {},
     checked: {
       feedback: {
@@ -212,7 +213,6 @@ export const mockSteps: Step[] = [
     unit: 'A',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
-    circuitOverlay: 'highlight_terminals_ab',
     filled: { value: '1.5' },
     checked: {
       value: '1.5',
@@ -235,7 +235,6 @@ export const mockSteps: Step[] = [
     unit: 'Ω',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
-    circuitOverlay: 'highlight_terminals_ab',
     filled: { value: '20' },
     checked: {
       value: '20',
@@ -248,4 +247,32 @@ export const mockSteps: Step[] = [
   },
 ];
 
-export const TOTAL_STEPS = mockSteps.length;
+/**
+ * The three demo profiles. Same homework assignment (the Thévenin problem),
+ * but each skill level gets a different set of questions / scaffolding depth.
+ *
+ * Authoring a profile is pure data: copy a step from `profile1Steps`, then edit
+ * its `prompt`, `helperText`, options, and the `checked` answer/feedback. No new
+ * components or screenshots are needed — `/problemset` renders whichever array
+ * it is handed.
+ *
+ * Profiles 2 and 3 currently start as copies of profile 1 so the page is fully
+ * navigable. Replace each array below with that profile's own questions.
+ */
+export type ProfileId = '1' | '2' | '3';
+
+// TODO(profile 2 — "exploring"): replace with profile 2's own questions.
+export const profile2Steps: Step[] = structuredClone(profile1Steps);
+
+// TODO(profile 3 — "distracted"): replace with profile 3's own questions.
+export const profile3Steps: Step[] = structuredClone(profile1Steps);
+
+export const stepsByProfile: Record<ProfileId, Step[]> = {
+  '1': profile1Steps,
+  '2': profile2Steps,
+  '3': profile3Steps,
+};
+
+// Back-compat for the showcase route, which previews profile 1.
+export const mockSteps = profile1Steps;
+export const TOTAL_STEPS = profile1Steps.length;

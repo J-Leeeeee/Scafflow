@@ -13,10 +13,19 @@ export const apiClient = {
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await apiClient.fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
-    ...init,
-  });
+  let res: Response;
+  try {
+    res = await apiClient.fetch(path, {
+      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+      ...init,
+    });
+  } catch {
+    throw new ApiError(
+      'Cannot reach the server. Make sure the backend is running on port 3000.',
+      0,
+      null,
+    );
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const message = (body && typeof body === 'object' && 'error' in body)
@@ -38,7 +47,7 @@ export type CourseLevel = 'intro' | 'intermediate' | 'advanced';
 export type LearnerProfile = 'starter' | 'exploring' | 'distracted' | 'independent';
 export type Topic = 'kvl' | 'kcl' | 'phasors' | 'impedance' | 'thevenin';
 export type Difficulty = 'easy' | 'medium' | 'hard';
-export type StepType = 'mcq' | 'numeric' | 'planning' | 'open';
+export type StepType = 'mcq' | 'numeric' | 'planning' | 'open' | 'drawing_task';
 
 export interface PublicProblem {
   id: string;
@@ -187,11 +196,6 @@ export const sessions = {
     request<{ session_id: string }>('/api/sessions', {
       method: 'POST',
       body: JSON.stringify(input ?? {}),
-    }),
-
-  heartbeat: (id: string) =>
-    request<{ intervention: unknown | null }>(`/api/sessions/${id}/heartbeat`, {
-      method: 'POST',
     }),
 
   end: (id: string) =>
