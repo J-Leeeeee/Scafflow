@@ -1,5 +1,5 @@
 import type { CircuitOverlay } from '../types';
-import { CurrentSource, Resistor, VoltageSource } from './circuit-symbols';
+import { CurrentSource, MeshCurrentArrow, Resistor, VoltageSource } from './circuit-symbols';
 
 interface CircuitDiagramProps {
   overlay?: CircuitOverlay;
@@ -23,7 +23,7 @@ interface CircuitDiagramProps {
  * Optional `overlay` markers are re-mapped onto this geometry:
  *   - highlight_node_va        indigo marker on node Va (top-right node, term a)
  *   - highlight_terminals_ab   red bar across terminals a–b
- *   - mesh_loops / mesh_loop_1 numbered mesh-current markers
+ *   - mesh_loops / mesh_loop_1 clockwise mesh-current arrows (i1 top, i2 bottom-left, i3 bottom-right)
  * NOTE: overlay positions are a first pass — eyeball them against the render.
  */
 export function CircuitDiagram({ overlay = 'none', className = '' }: CircuitDiagramProps) {
@@ -110,16 +110,15 @@ export function CircuitDiagram({ overlay = 'none', className = '' }: CircuitDiag
       )}
       {overlay === 'mesh_loops' && (
         <g>
-          <MeshMarker cx={110} cy={40} label="1" />
-          <MeshMarker cx={200} cy={40} label="2" />
-          <MeshMarker cx={150} cy={-25} label="3" />
+          <MeshCurrentArrow cx={150} cy={-25} label="i1" /> {/* top loop */}
+          <MeshCurrentArrow cx={110} cy={40} label="i2" /> {/* bottom-left */}
+          <MeshCurrentArrow cx={212} cy={40} label="i3" /> {/* bottom-right (nudged clear of the 25Ω label) */}
         </g>
       )}
-      {overlay === 'mesh_loop_1' && <MeshMarker cx={110} cy={40} label="1" />}
+      {overlay === 'mesh_loop_1' && <MeshCurrentArrow cx={150} cy={-25} label="i1" />}
     </svg>
   );
 }
-
 /** Node junction dots, copied from the export. */
 const NODE_DOTS: ReadonlyArray<readonly [number, number]> = [
   [280, 0],
@@ -130,22 +129,3 @@ const NODE_DOTS: ReadonlyArray<readonly [number, number]> = [
   [160, 80],
   [60, 0],
 ];
-
-function MeshMarker({ cx, cy, label }: { cx: number; cy: number; label: string }) {
-  return (
-    <g>
-      <circle cx={cx} cy={cy} r="9" fill="#1F2937" />
-      <text
-        x={cx}
-        y={cy}
-        fontSize="11"
-        fontWeight="700"
-        fill="white"
-        textAnchor="middle"
-        dominantBaseline="middle"
-      >
-        {label}
-      </text>
-    </g>
-  );
-}

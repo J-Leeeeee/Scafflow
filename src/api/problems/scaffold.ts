@@ -12,6 +12,7 @@ import { gradeCircuitCanvas, parseCircuitCanvasState } from '../../lib/circuit-c
 import type { LearnerProfile, McqOption, StepType } from '../../types/schema';
 
 const STEP_ATTEMPT_BUDGET = 5;
+type CircuitInteractionType = 'ground_node' | 'short_mesh';
 
 // Public step shape — never expose ground_truth_answer or option.is_correct.
 interface PublicStep {
@@ -20,6 +21,7 @@ interface PublicStep {
   step_type: StepType;
   prompt_text: string;
   options: Array<{ key: string; text: string }> | null;
+  interaction_type: CircuitInteractionType | null;
 }
 
 // GET /api/problems/:id/scaffold
@@ -48,7 +50,7 @@ export async function getScaffold(req: Request, res: Response): Promise<void> {
   }
   // No variant of any kind — return empty steps so the frontend degrades gracefully.
   if (variantRow.rows.length === 0) {
-    const { session_id } = req.query as { session_id?: string };
+    const { session_id } = (req.query ?? {}) as { session_id?: string };
     let currentStepId: string | null = null;
     if (session_id) {
       const redisSession = await getSession(session_id);
@@ -88,6 +90,7 @@ export async function getScaffold(req: Request, res: Response): Promise<void> {
     options: row.options
       ? row.options.map(o => ({ key: o.key, text: o.text }))   // strip is_correct
       : null,
+    interaction_type: interactionTypeForStep(row.step_type, row.prompt_text),
   }));
 
   // If the caller provides a session_id, include the active step position.
@@ -128,11 +131,12 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
   const stepRow = await pool.query<{
     id: string;
     step_type: StepType;
+    prompt_text: string;
     options: McqOption[] | null;
     ground_truth_answer: number | null;
     tolerance: number | null;
   }>(
-    `SELECT s.id, s.step_type, s.options, s.ground_truth_answer, s.tolerance
+    `SELECT s.id, s.step_type, s.prompt_text, s.options, s.ground_truth_answer, s.tolerance
        FROM problem_steps s
        JOIN problem_variants v ON v.id = s.variant_id
       WHERE s.id = $1 AND v.problem_id = $2`,
@@ -143,11 +147,22 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
     return;
   }
   const step = stepRow.rows[0];
+  const interactionType = interactionTypeForStep(step.step_type, step.prompt_text);
 
   // Grade
   let correct: boolean | null;
   let misconceptionHint: string | null = null;
-  switch (step.step_type) {
+  if (interactionType === 'ground_node') {
+    const canvasState = parseCircuitCanvasState(submitted_value);
+    if (!canvasState || canvasState.task !== 'ground_node') {
+      correct = false;
+      misconceptionHint = 'Submit a valid ground-node selection.';
+    } else {
+      const grade = gradeCircuitCanvas(canvasState);
+      correct = grade.correct;
+      misconceptionHint = grade.hint;
+    }
+  } else switch (step.step_type) {
     case 'mcq': {
       const selected = String(submitted_value).trim().toUpperCase();
       const opt = step.options?.find(o => o.key.toUpperCase() === selected);
@@ -175,7 +190,7 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
       break;
     case 'drawing_task': {
       const canvasState = parseCircuitCanvasState(submitted_value);
-      if (!canvasState) {
+      if (!canvasState || canvasState.task !== 'short_mesh') {
         correct = false;
         misconceptionHint = 'Submit a valid circuit canvas response.';
       } else {
@@ -245,4 +260,17 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
     misconception_hint: misconceptionHint,
     ...attemptMetadata,
   });
+}
+
+function interactionTypeForStep(stepType: StepType, promptText: string | null | undefined): CircuitInteractionType | null {
+  const text = promptText ?? '';
+  if (stepType === 'drawing_task') return 'short_mesh';
+  if (
+    (stepType === 'planning' || stepType === 'open')
+    && /\b(reference|ground)\b/i.test(text)
+    && /\b(node|rail)\b/i.test(text)
+  ) {
+    return 'ground_node';
+  }
+  return null;
 }

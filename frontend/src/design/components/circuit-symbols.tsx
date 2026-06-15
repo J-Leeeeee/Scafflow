@@ -49,3 +49,49 @@ export function CurrentSource({ transform }: SymbolProps) {
     </g>
   );
 }
+
+/**
+ * Mesh-current marker — a clockwise ~270° red arc with an arrowhead, drawn to
+ * convey the direction of the mesh current rather than a static badge. The gap
+ * sits in the top-right quadrant and the arrowhead caps the 12 o'clock end
+ * pointing right, the conventional "clockwise" cue. The label sits in the
+ * centre. Shared by the interactive canvas and the static `mesh_loops` overlay
+ * so the two never drift.
+ */
+export function MeshCurrentArrow({
+  cx,
+  cy,
+  label,
+  r = 11,
+}: {
+  cx: number;
+  cy: number;
+  label: string;
+  r?: number;
+}) {
+  return (
+    <g fill="none" stroke="#615FFF" strokeWidth="1.6" strokeLinecap="round">
+      {/* 270° arc, clockwise (sweep=1), gap in the top-right quadrant */}
+      <path d={`M ${cx + r} ${cy} A ${r} ${r} 0 1 1 ${cx} ${cy - r}`} />
+      {/* arrowhead at the 12 o'clock end, pointing right = clockwise */}
+      <polygon
+        points={`${cx + 5},${cy - r} ${cx - 1},${cy - r - 4} ${cx - 1},${cy - r + 4}`}
+        fill="#615FFF"
+        stroke="none"
+      />
+      <text
+        x={cx}
+        y={cy}
+        fontFamily="'Times New Roman', Georgia, serif"
+        fontSize="9"
+        fontWeight="700"
+        fill="#615FFF"
+        stroke="none"
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        {label}
+      </text>
+    </g>
+  );
+}

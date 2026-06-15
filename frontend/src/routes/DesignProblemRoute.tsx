@@ -7,7 +7,7 @@ import { Sidebar } from '../design/components/Sidebar';
 import { StepCard } from '../design/components/StepCard';
 import { WorkspaceFrame } from '../design/components/WorkspaceFrame';
 import { stepsByProfile, type ProfileId } from '../design/mockSteps';
-import type { Feedback as FeedbackData, DrawingTaskStepDef, Step, StepState } from '../design/types';
+import type { CanvasTask, Feedback as FeedbackData, Step, StepState } from '../design/types';
 import {
   gradeCircuitCanvas,
   hasCircuitCanvasInteraction,
@@ -41,10 +41,10 @@ type TextInputStep = Extract<
  * No backend integration — this is the visual contract that stage 4 will
  * wire to `problems.getScaffold` and `problems.submitStep`.
  *
- * The `?profile=` query param (1 | 2 | 3) selects which profile's questions to
+ * The `?profile=` query param (1 | 2 | 3 | 4) selects which profile's questions to
  * render. A future onboarding survey just navigates to `/problemset?profile=N`.
  */
-const VALID_PROFILES: readonly string[] = ['1', '2', '3'];
+const VALID_PROFILES: readonly string[] = ['1', '2', '3', '4'];
 
 export function DesignProblemRoute() {
   const [searchParams] = useSearchParams();
@@ -68,6 +68,7 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
   const [incorrectAttemptsByStep, setIncorrectAttemptsByStep] = useState<Record<number, number>>({});
 
   const step = mockSteps[activeIndex];
+  const canvasTask = canvasTaskForStep(step);
   const state: StepState = statesByStep[step.number] ?? 'empty';
   const selectedOptionIndex = step.kind === 'mcq' ? mcqSelectionsByStep[step.number] : undefined;
   const mcqFeedback = step.kind === 'mcq' ? mcqFeedbackByStep[step.number] : undefined;
@@ -75,9 +76,9 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
     ? textAnswersByStep[step.number] ?? emptyTextAnswers(step)
     : undefined;
   const textFeedback = isTextInputStep(step) ? textFeedbackByStep[step.number] : undefined;
-  const drawingFeedback = step.kind === 'drawing_task' ? drawingFeedbackByStep[step.number] : undefined;
-  const canvasState = step.kind === 'drawing_task' ? canvasStateByStep[step.number] : undefined;
-  const feedbackOverride = mcqFeedback ?? textFeedback ?? drawingFeedback;
+  const canvasFeedback = canvasTask ? drawingFeedbackByStep[step.number] : undefined;
+  const canvasState = canvasTask ? canvasStateByStep[step.number] : undefined;
+  const feedbackOverride = mcqFeedback ?? textFeedback ?? canvasFeedback;
 
   function advanceState() {
     if (step.kind === 'mcq') {
@@ -90,8 +91,8 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
       return;
     }
 
-    if (step.kind === 'drawing_task') {
-      submitDrawingTask();
+    if (canvasTask) {
+      submitCanvasTask();
       return;
     }
 
@@ -157,7 +158,7 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
   }
 
   function changeCanvasState(value: string) {
-    if (step.kind !== 'drawing_task') return;
+    if (!canvasTask) return;
 
     setCanvasStateByStep((prev) => ({ ...prev, [step.number]: value }));
     setDrawingFeedbackByStep((prev) => {
@@ -168,8 +169,8 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
     setStatesByStep((prev) => ({ ...prev, [step.number]: 'filled' }));
   }
 
-  function submitDrawingTask() {
-    if (step.kind !== 'drawing_task') return;
+  function submitCanvasTask() {
+    if (!canvasTask || !isCanvasStep(step)) return;
 
     const parsed = parseCircuitCanvasState(canvasStateByStep[step.number] ?? null);
     if (!parsed) return;
@@ -177,7 +178,7 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
     const { correct, hint } = gradeCircuitCanvas(parsed);
     const feedback = correct
       ? step.checked.feedback
-      : drawingIncorrectFeedback(step, hint);
+      : canvasIncorrectFeedback(step.number, hint);
     setDrawingFeedbackByStep((prev) => ({
       ...prev,
       [step.number]: feedback,
@@ -191,9 +192,9 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
     return incorrectAttemptFeedback(attemptsUsed);
   }
 
-  function drawingIncorrectFeedback(stepDef: DrawingTaskStepDef, hint: string | null): FeedbackData {
-    const attemptsUsed = (incorrectAttemptsByStep[stepDef.number] ?? 0) + 1;
-    setIncorrectAttemptsByStep((prev) => ({ ...prev, [stepDef.number]: attemptsUsed }));
+  function canvasIncorrectFeedback(stepNumber: number, hint: string | null): FeedbackData {
+    const attemptsUsed = (incorrectAttemptsByStep[stepNumber] ?? 0) + 1;
+    setIncorrectAttemptsByStep((prev) => ({ ...prev, [stepNumber]: attemptsUsed }));
     if (hint && attemptsUsed === 1) {
       return { tone: 'error', title: 'Not quite', body: hint };
     }
@@ -222,7 +223,7 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
               actionDisabled={
                 (step.kind === 'mcq' && selectedOptionIndex === undefined)
                 || (isTextInputStep(step) && (!textAnswers || !hasRequiredTextAnswers(step, textAnswers)))
-                || (step.kind === 'drawing_task' && !hasDrawingInteraction(canvasState))
+                || (canvasTask !== undefined && !hasDrawingInteraction(canvasState))
               }
               onOptionSelect={selectMcqOption}
               onTextAnswerChange={changeTextAnswer}
@@ -236,9 +237,10 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
         />
       }
       workspace={
-        step.kind === 'drawing_task' ? (
+        canvasTask ? (
           <InteractiveCircuitCanvas
             key={step.number}
+            task={canvasTask}
             initialState={canvasState}
             onChange={changeCanvasState}
           />
@@ -249,6 +251,16 @@ function ProblemWorkspace({ profile }: { profile: ProfileId }) {
       onBack={() => navigate('/dashboard')}
     />
   );
+}
+
+function canvasTaskForStep(step: Step): CanvasTask | undefined {
+  if (step.canvasTask) return step.canvasTask;
+  if (step.kind === 'drawing_task') return 'short_mesh';
+  return undefined;
+}
+
+function isCanvasStep(step: Step): step is Extract<Step, { kind: 'drawing_task' | 'select_in_diagram' }> {
+  return step.kind === 'drawing_task' || step.kind === 'select_in_diagram';
 }
 
 function isTextInputStep(step: Step): step is TextInputStep {

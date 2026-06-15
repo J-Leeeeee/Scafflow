@@ -1,6 +1,11 @@
 import { useState } from 'react';
-import { CurrentSource, Resistor, VoltageSource } from '../design/components/circuit-symbols';
-import { parseCircuitCanvasState, type CircuitCanvasState } from '../lib/circuitCanvas';
+import { CurrentSource, MeshCurrentArrow, Resistor, VoltageSource } from '../design/components/circuit-symbols';
+import {
+  parseCircuitCanvasState,
+  type CircuitCanvasState,
+  type CircuitCanvasTask,
+  type CircuitNodeId,
+} from '../lib/circuitCanvas';
 
 export type { CircuitCanvasState };
 
@@ -14,19 +19,44 @@ const NODE_DOTS: ReadonlyArray<readonly [number, number]> = [
   [60, 0],
 ];
 
+const MESH_LOOPS: ReadonlyArray<readonly [number, number]> = [
+  [150, -25],
+  [110, 40],
+  [212, 40],
+];
+
+const GROUND_NODE_TARGETS: ReadonlyArray<{
+  id: CircuitNodeId;
+  cx: number;
+  cy: number;
+  label: string;
+}> = [
+  { id: 'left_node', cx: 60, cy: 0, label: 'left node' },
+  { id: 'center_node', cx: 160, cy: 0, label: 'center node' },
+  { id: 'terminal_a', cx: 240, cy: 0, label: 'terminal a node' },
+  { id: 'bottom_rail', cx: 160, cy: 80, label: 'bottom rail' },
+  { id: 'terminal_b', cx: 240, cy: 80, label: 'terminal b node' },
+];
+
 export function InteractiveCircuitCanvas({
   onChange,
   initialState,
+  task = 'short_mesh',
 }: {
   onChange: (state: string) => void;
   initialState?: string;
+  task?: CircuitCanvasTask;
 }) {
   const parsedInitial = parseCircuitCanvasState(initialState ?? null);
-  const [isShorted, setIsShorted] = useState(parsedInitial?.isShorted ?? false);
-  const [loops, setLoops] = useState<Record<number, string>>(parsedInitial?.loops ?? {});
+  const taskInitial = parsedInitial?.task === task ? parsedInitial : null;
+  const [isShorted, setIsShorted] = useState(taskInitial?.isShorted ?? false);
+  const [loops, setLoops] = useState<Record<number, string>>(taskInitial?.loops ?? {});
+  const [selectedNode, setSelectedNode] = useState<CircuitNodeId | undefined>(taskInitial?.selectedNode);
   const [activeTerminal, setActiveTerminal] = useState<string | null>(null);
 
   const handleTerminalClick = (term: string) => {
+    if (task !== 'short_mesh') return;
+
     if (activeTerminal && activeTerminal !== term) {
       setIsShorted(true);
       setActiveTerminal(null);
@@ -37,6 +67,8 @@ export function InteractiveCircuitCanvas({
   };
 
   const handleLoopClick = (idx: number) => {
+    if (task !== 'short_mesh') return;
+
     const nextLoops = { ...loops };
     if (!nextLoops[idx]) {
       nextLoops[idx] = `i${idx + 1}`;
@@ -46,6 +78,21 @@ export function InteractiveCircuitCanvas({
     setLoops(nextLoops);
     onChange(JSON.stringify({ isShorted, loops: nextLoops }));
   };
+
+  const handleGroundNodeClick = (nodeId: CircuitNodeId) => {
+    if (task !== 'ground_node') return;
+
+    setSelectedNode(nodeId);
+    setActiveTerminal(null);
+    onChange(JSON.stringify({
+      task: 'ground_node',
+      selectedNode: nodeId,
+      isShorted: false,
+      loops: {},
+    }));
+  };
+
+  const selectedTarget = GROUND_NODE_TARGETS.find((target) => target.id === selectedNode);
 
   return (
     <main className="min-w-0 flex-1 bg-[#F8F9FA] p-4">
@@ -57,7 +104,15 @@ export function InteractiveCircuitCanvas({
           </div>
         </header>
         <div className="p-4 bg-yellow-50 border-b border-yellow-200 text-sm text-yellow-800">
-          <strong>Instructions:</strong> Click terminal <strong>a</strong> and then <strong>b</strong> to short them together. Click inside the three circuit loops to add mesh current labels.
+          {task === 'ground_node' ? (
+            <>
+              <strong>Instructions:</strong> Click the bottom rail node to choose it as the reference ground for nodal analysis.
+            </>
+          ) : (
+            <>
+              <strong>Instructions:</strong> Click terminal <strong>a</strong> and then <strong>b</strong> to short them together. Click inside the three circuit loops to add mesh current labels.
+            </>
+          )}
         </div>
         <div className="flex-1 p-8 flex items-center justify-center">
           <svg viewBox="4.67 -84.71 309.33 190.71" className="w-full max-w-[500px]">
@@ -111,37 +166,63 @@ export function InteractiveCircuitCanvas({
               <text x="290" y="80">b</text>
             </g>
 
-            <g className="cursor-pointer" onClick={() => handleLoopClick(0)}>
-              <circle cx="110" cy="40" r="20" fill="transparent" />
-              {loops[0] && <MeshMarker cx={110} cy={40} label={loops[0]} />}
-            </g>
-            <g className="cursor-pointer" onClick={() => handleLoopClick(1)}>
-              <circle cx="200" cy="40" r="20" fill="transparent" />
-              {loops[1] && <MeshMarker cx={200} cy={40} label={loops[1]} />}
-            </g>
-            <g className="cursor-pointer" onClick={() => handleLoopClick(2)}>
-              <circle cx="150" cy="-25" r="20" fill="transparent" />
-              {loops[2] && <MeshMarker cx={150} cy="-25" label={loops[2]} />}
-            </g>
+            {task === 'short_mesh' && MESH_LOOPS.map(([cx, cy], idx) => (
+              <g key={idx} className="cursor-pointer" onClick={() => handleLoopClick(idx)}>
+                <circle cx={cx} cy={cy} r="20" fill="transparent" />
+                {loops[idx] && <MeshCurrentArrow cx={cx} cy={cy} label={loops[idx]} />}
+              </g>
+            ))}
 
-            {isShorted && (
+            {task === 'short_mesh' && isShorted && (
               <polyline points="280,0 300,0 300,80 280,80" stroke="#615FFF" strokeWidth="2.5" fill="none" />
             )}
 
-            <circle
-              cx="280" cy="0" r="10"
-              fill={activeTerminal === 'a' ? 'rgba(97,95,255,0.4)' : 'transparent'}
-              stroke={activeTerminal === 'a' ? '#615FFF' : 'transparent'}
-              className="cursor-pointer hover:fill-blue-100/50 transition-colors"
-              onClick={() => handleTerminalClick('a')}
-            />
-            <circle
-              cx="280" cy="80" r="10"
-              fill={activeTerminal === 'b' ? 'rgba(97,95,255,0.4)' : 'transparent'}
-              stroke={activeTerminal === 'b' ? '#615FFF' : 'transparent'}
-              className="cursor-pointer hover:fill-blue-100/50 transition-colors"
-              onClick={() => handleTerminalClick('b')}
-            />
+            {task === 'ground_node' && (
+              <>
+                <polyline
+                  points="60,80 160,80"
+                  stroke="transparent"
+                  strokeWidth="18"
+                  strokeLinecap="round"
+                  className="cursor-pointer"
+                  onClick={() => handleGroundNodeClick('bottom_rail')}
+                />
+                {GROUND_NODE_TARGETS.map((target) => (
+                  <circle
+                    key={target.id}
+                    cx={target.cx}
+                    cy={target.cy}
+                    r={target.id === 'bottom_rail' ? 14 : 11}
+                    fill={selectedNode === target.id ? 'rgba(97,95,255,0.18)' : 'transparent'}
+                    stroke={selectedNode === target.id ? '#615FFF' : 'transparent'}
+                    strokeWidth="1.5"
+                    className="cursor-pointer hover:fill-blue-100/50 transition-colors"
+                    aria-label={`Select ${target.label} as ground`}
+                    onClick={() => handleGroundNodeClick(target.id)}
+                  />
+                ))}
+                {selectedTarget && <GroundMarker cx={selectedTarget.cx} cy={selectedTarget.cy} />}
+              </>
+            )}
+
+            {task === 'short_mesh' && (
+              <>
+                <circle
+                  cx="280" cy="0" r="10"
+                  fill={activeTerminal === 'a' ? 'rgba(97,95,255,0.4)' : 'transparent'}
+                  stroke={activeTerminal === 'a' ? '#615FFF' : 'transparent'}
+                  className="cursor-pointer hover:fill-blue-100/50 transition-colors"
+                  onClick={() => handleTerminalClick('a')}
+                />
+                <circle
+                  cx="280" cy="80" r="10"
+                  fill={activeTerminal === 'b' ? 'rgba(97,95,255,0.4)' : 'transparent'}
+                  stroke={activeTerminal === 'b' ? '#615FFF' : 'transparent'}
+                  className="cursor-pointer hover:fill-blue-100/50 transition-colors"
+                  onClick={() => handleTerminalClick('b')}
+                />
+              </>
+            )}
           </svg>
         </div>
       </div>
@@ -149,21 +230,21 @@ export function InteractiveCircuitCanvas({
   );
 }
 
-function MeshMarker({ cx, cy, label }: { cx: number; cy: number; label: string }) {
+function GroundMarker({ cx, cy }: { cx: number; cy: number }) {
   return (
-    <g>
-      <circle cx={cx} cy={cy} r="9" fill="#1F2937" />
-      <text
-        x={cx}
-        y={cy}
-        fontSize="11"
-        fontWeight="700"
-        fill="white"
-        textAnchor="middle"
-        dominantBaseline="middle"
-      >
-        {label}
-      </text>
+    <g
+      transform={`translate(${cx} ${cy})`}
+      stroke="#615FFF"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      fill="none"
+      pointerEvents="none"
+    >
+      <circle cx="0" cy="0" r="6.5" fill="rgba(97,95,255,0.18)" />
+      <line x1="0" y1="5" x2="0" y2="15" />
+      <line x1="-8" y1="15" x2="8" y2="15" />
+      <line x1="-5" y1="19" x2="5" y2="19" />
+      <line x1="-2.5" y1="23" x2="2.5" y2="23" />
     </g>
   );
 }

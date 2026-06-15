@@ -4,7 +4,7 @@ import { Sidebar } from '../design/components/Sidebar';
 import { StepCard } from '../design/components/StepCard';
 import { WorkspaceFrame } from '../design/components/WorkspaceFrame';
 import { mockSteps } from '../design/mockSteps';
-import type { Step, StepState } from '../design/types';
+import type { CanvasTask, Step, StepState } from '../design/types';
 
 /**
  * Design review artifact: every step in the fixtures rendered in every
@@ -70,6 +70,7 @@ function FrameThumbnail({ step, state }: { step: Step; state: StepState }) {
   const FRAME_WIDTH = 1440;
   const FRAME_HEIGHT = 900;
   const SCALE = 440 / FRAME_WIDTH;
+  const canvasTask = canvasTaskForStep(step);
 
   return (
     <div>
@@ -100,8 +101,8 @@ function FrameThumbnail({ step, state }: { step: Step; state: StepState }) {
               />
             }
             workspace={
-              step.kind === 'drawing_task' ? (
-                <InteractiveCircuitCanvas onChange={() => {}} />
+              canvasTask ? (
+                <InteractiveCircuitCanvas task={canvasTask} onChange={() => {}} />
               ) : (
                 <Scratchpad />
               )
@@ -111,4 +112,10 @@ function FrameThumbnail({ step, state }: { step: Step; state: StepState }) {
       </div>
     </div>
   );
+}
+
+function canvasTaskForStep(step: Step): CanvasTask | undefined {
+  if (step.canvasTask) return step.canvasTask;
+  if (step.kind === 'drawing_task') return 'short_mesh';
+  return undefined;
 }

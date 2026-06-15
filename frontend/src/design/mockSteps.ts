@@ -11,6 +11,7 @@ import type { Step } from './types';
  * the `prompt`, `helperText`, and structural fields become part of the
  * scaffold definition.
  */
+
 export const profile1Steps: Step[] = [
   {
     kind: 'mcq',
@@ -77,6 +78,7 @@ export const profile1Steps: Step[] = [
     prompt: 'Use Nodal Analysis to find Vth. Choose a ground node.',
     helperText: 'Select a reference/ground node by clicking on a node on the circuit below.',
     actionLabel: 'Confirm Selection',
+    canvasTask: 'ground_node',
     filled: { overlay: 'highlight_node_va' },
     checked: {
       overlay: 'highlight_node_va',
@@ -165,6 +167,7 @@ export const profile1Steps: Step[] = [
     helperText:
       'Using the interactive canvas on the right, short terminals a and b, then label all mesh currents needed to determine the short-circuit current.',
     actionLabel: 'Check Drawing',
+    canvasTask: 'short_mesh',
     filled: {},
     checked: {
       feedback: {
@@ -248,31 +251,421 @@ export const profile1Steps: Step[] = [
 ];
 
 /**
- * The three demo profiles. Same homework assignment (the Thévenin problem),
- * but each skill level gets a different set of questions / scaffolding depth.
- *
- * Authoring a profile is pure data: copy a step from `profile1Steps`, then edit
- * its `prompt`, `helperText`, options, and the `checked` answer/feedback. No new
- * components or screenshots are needed — `/problemset` renders whichever array
- * it is handed.
- *
- * Profiles 2 and 3 currently start as copies of profile 1 so the page is fully
- * navigable. Replace each array below with that profile's own questions.
+ * The four demo profiles. Same homework assignment (the Thévenin problem),
  */
-export type ProfileId = '1' | '2' | '3';
+export type ProfileId = '1' | '2' | '3' | '4';
 
-// TODO(profile 2 — "exploring"): replace with profile 2's own questions.
-export const profile2Steps: Step[] = structuredClone(profile1Steps);
+// Profile 2 ("exploring"): 11 steps. Drops Profile 1's essential-node count,
+// while keeping the Vth setup, KCL, short-circuit, mesh, Isc, and Rth checks.
+export const profile2Steps: Step[] = [
+  {
+    kind: 'mcq',
+    number: 1,
+    prompt: 'Which circuit form is the Thevenin equivalent?',
+    helperText: 'Pick the source and resistor arrangement that matches the model.',
+    actionLabel: 'Confirm Selection',
+    options: [
+      { key: 'A', kind: 'voltage_series' },
+      { key: 'B', kind: 'current_series' },
+      { key: 'C', kind: 'current_parallel' },
+      { key: 'D', kind: 'voltage_parallel' },
+    ],
+    filled: { selectedIndex: 0 },
+    checked: {
+      selectedIndex: 0,
+      feedback: {
+        tone: 'success',
+        title: 'Correct',
+        body: 'The Thevenin model is a voltage source in series with a resistance.',
+      },
+    },
+  },
+  {
+    kind: 'multi_value',
+    number: 2,
+    prompt: 'What two values define the equivalent?',
+    actionLabel: 'Check Solution',
+    inputs: [
+      { label: 'VALUE 1' },
+      { label: 'VALUE 2' },
+    ],
+    filled: { values: ['Vth', 'Rth'] },
+    checked: {
+      values: ['Vth', 'Rth'],
+      feedback: {
+        tone: 'success',
+        title: 'Right',
+        body: 'You need Vth and Rth to specify the Thevenin equivalent.',
+      },
+    },
+  },
+  {
+    kind: 'multi_value',
+    number: 3,
+    prompt: 'For Vth, what voltage are you solving for?',
+    helperText: 'Use terminal notation from the circuit.',
+    actionLabel: 'Check Solution',
+    inputs: [{ label: 'Vth =', placeholder: 'e.g. Vxy' }],
+    filled: { values: ['Vab'] },
+    checked: {
+      values: ['Vab'],
+      feedback: {
+        tone: 'success',
+        title: 'Good',
+        body: 'Vth is the open-circuit terminal voltage Vab.',
+      },
+    },
+  },
+  {
+    kind: 'select_in_diagram',
+    number: 4,
+    prompt: 'Choose a reference node for nodal analysis.',
+    helperText: 'Select the ground node you would use before writing KCL on the interactive circuit canvas.',
+    actionLabel: 'Confirm Selection',
+    canvasTask: 'ground_node',
+    filled: { overlay: 'highlight_node_va' },
+    checked: {
+      overlay: 'highlight_node_va',
+      feedback: {
+        tone: 'success',
+        title: 'Nice choice',
+        body: 'Using the bottom rail as ground leaves Va and Vb as the node voltages.',
+      },
+    },
+  },
+  {
+    kind: 'numeric_plain',
+    number: 5,
+    prompt: 'How many KCL equations are needed?',
+    fieldLabel: 'Number of equations:',
+    actionLabel: 'Check Solution',
+    filled: { value: '2' },
+    checked: {
+      value: '2',
+      feedback: {
+        tone: 'success',
+        title: 'Correct',
+        body: 'With ground chosen, the two unknown node voltages need 2 KCL equations.',
+      },
+    },
+  },
+  {
+    kind: 'labeled_equations',
+    number: 6,
+    prompt: 'Write the KCL equations for Va and Vb.',
+    actionLabel: 'Check Solution',
+    prefix: 'KCL',
+    circuitOverlay: 'highlight_node_va',
+    empty: { equations: ['', ''] },
+    filled: { equations: ['(VA-9)/20+(VA-VB)/60-1.8=0', ''] },
+    checked: {
+      equations: ['(VA-9)/20+(VA-VB)/60-1.8=0', '(VB-VA)/60+VB/25+VB/10=0'],
+      feedback: {
+        tone: 'success',
+        title: 'Looks good',
+        body: 'Those two KCL equations capture the open-circuit node voltages.',
+      },
+    },
+  },
+  {
+    kind: 'numeric_unit',
+    number: 7,
+    prompt: 'Solve the KCL system for Vth.',
+    helperText: 'Use Vth = Va - Vb.',
+    fieldLabel: 'Value of Vth:',
+    leftLabel: 'Vth =',
+    unit: 'V',
+    placeholder: '0.00',
+    actionLabel: 'Check Solution',
+    filled: { value: '30' },
+    checked: {
+      value: '30',
+      feedback: {
+        tone: 'success',
+        title: 'Correct',
+        body: 'Vth = 30 V from the open-circuit voltage across terminals a and b.',
+      },
+    },
+  },
+  {
+    kind: 'drawing_task',
+    number: 8,
+    prompt: 'Short a-b and label the mesh currents for Isc.',
+    helperText: 'Use the canvas to connect terminals a and b, then mark the loop currents.',
+    actionLabel: 'Check Drawing',
+    filled: {},
+    checked: {
+      feedback: {
+        tone: 'success',
+        title: 'Ready',
+        body: 'The shorted circuit is set up for the short-circuit current calculation.',
+      },
+    },
+  },
+  {
+    kind: 'labeled_equations',
+    number: 9,
+    prompt: 'Write the mesh-current equations.',
+    actionLabel: 'Check Equations',
+    prefix: 'MESH',
+    circuitOverlay: 'mesh_loops',
+    empty: { equations: ['', '', ''] },
+    filled: {
+      equations: [
+        '5*I1 + 20*(I1 - I2) = 9',
+        '20*(I2 - I1) + 25*I2 + 60*(I2 - I3) = 0',
+        '60*(I3 - I2) + 10*I3 = 0',
+      ],
+    },
+    checked: {
+      equations: [
+        '5*I1 + 20*(I1 - I2) = 9',
+        '20*(I2 - I1) + 25*I2 + 60*(I2 - I3) = 0',
+        '60*(I3 - I2) + 10*I3 = 0',
+      ],
+      feedback: {
+        tone: 'success',
+        title: 'Good equations',
+        body: 'The mesh equations are consistent; solve them to get the short-circuit current.',
+      },
+    },
+  },
+  {
+    kind: 'numeric_unit',
+    number: 10,
+    prompt: 'Enter the short-circuit current.',
+    helperText: 'Use the mesh current through the shorted terminals.',
+    fieldLabel: 'Value of Isc:',
+    leftLabel: 'Isc =',
+    unit: 'A',
+    placeholder: '0.00',
+    actionLabel: 'Check Solution',
+    filled: { value: '1.5' },
+    checked: {
+      value: '1.5',
+      feedback: {
+        tone: 'success',
+        title: 'Correct',
+        body: 'Isc = 1.5 A through the short between terminals a and b.',
+      },
+    },
+  },
+  {
+    kind: 'priors_then_input',
+    number: 11,
+    prompt: 'Compute the equivalent resistance.',
+    helperText: 'Use the values you found for Vth and Isc.',
+    priors: ['Vth = 30 V', 'Isc = 1.5 A'],
+    fieldLabel: 'Value of Rth:',
+    leftLabel: 'Rth =',
+    unit: 'Ω',
+    placeholder: '0.00',
+    actionLabel: 'Check Solution',
+    filled: { value: '20' },
+    checked: {
+      value: '20',
+      feedback: {
+        tone: 'success',
+        title: 'Complete',
+        body: 'Rth = Vth / Isc = 30 / 1.5 = 20 Ω.',
+      },
+    },
+  },
+];
 
-// TODO(profile 3 — "distracted"): replace with profile 3's own questions.
-export const profile3Steps: Step[] = structuredClone(profile1Steps);
+// Profile 3 ("distracted"): 6 steps. Merges the Vab, ground, KCL, and mesh
+// scaffolds into direct checkpoints for model, values, Vth, short setup, Isc, Rth.
+export const profile3Steps: Step[] = [
+  {
+    kind: 'mcq',
+    number: 1,
+    prompt: 'Goal: pick the Thevenin model.',
+    helperText: 'Choose the equivalent circuit form.',
+    actionLabel: 'Confirm Selection',
+    options: [
+      { key: 'A', kind: 'voltage_series' },
+      { key: 'B', kind: 'current_series' },
+      { key: 'C', kind: 'current_parallel' },
+      { key: 'D', kind: 'voltage_parallel' },
+    ],
+    filled: { selectedIndex: 0 },
+    checked: {
+      selectedIndex: 0,
+      feedback: {
+        tone: 'success',
+        title: 'Yes',
+        body: 'The Thevenin equivalent is a voltage source in series with a resistance.',
+      },
+    },
+  },
+  {
+    kind: 'multi_value',
+    number: 2,
+    prompt: 'Name the two target values.',
+    actionLabel: 'Check Solution',
+    inputs: [
+      { label: 'VALUE 1' },
+      { label: 'VALUE 2' },
+    ],
+    filled: { values: ['Vth', 'Rth'] },
+    checked: {
+      values: ['Vth', 'Rth'],
+      feedback: {
+        tone: 'success',
+        title: 'Right',
+        body: 'The target values are Vth and Rth.',
+      },
+    },
+  },
+  {
+    kind: 'numeric_unit',
+    number: 3,
+    prompt: 'Find Vth.',
+    helperText: 'Use the open-circuit voltage at a-b.',
+    fieldLabel: 'Value of Vth:',
+    leftLabel: 'Vth =',
+    unit: 'V',
+    placeholder: '0.00',
+    actionLabel: 'Check Solution',
+    filled: { value: '30' },
+    checked: {
+      value: '30',
+      feedback: {
+        tone: 'success',
+        title: 'Correct',
+        body: 'Vth = 30 V.',
+      },
+    },
+  },
+  {
+    kind: 'drawing_task',
+    number: 4,
+    prompt: 'Short a-b for Isc.',
+    helperText: 'Connect the terminals and label the loop currents.',
+    actionLabel: 'Check Drawing',
+    filled: {},
+    checked: {
+      feedback: {
+        tone: 'success',
+        title: 'Set',
+        body: 'The short-circuit setup is ready for Isc.',
+      },
+    },
+  },
+  {
+    kind: 'numeric_unit',
+    number: 5,
+    prompt: 'Find Isc.',
+    helperText: 'Use the current through the shorted terminals.',
+    fieldLabel: 'Value of Isc:',
+    leftLabel: 'Isc =',
+    unit: 'A',
+    placeholder: '0.00',
+    actionLabel: 'Check Solution',
+    filled: { value: '1.5' },
+    checked: {
+      value: '1.5',
+      feedback: {
+        tone: 'success',
+        title: 'Correct',
+        body: 'Isc = 1.5 A.',
+      },
+    },
+  },
+  {
+    kind: 'priors_then_input',
+    number: 6,
+    prompt: 'Find Rth.',
+    helperText: 'Use Rth = Vth / Isc.',
+    priors: ['Vth = 30 V', 'Isc = 1.5 A'],
+    fieldLabel: 'Value of Rth:',
+    leftLabel: 'Rth =',
+    unit: 'Ω',
+    placeholder: '0.00',
+    actionLabel: 'Check Solution',
+    filled: { value: '20' },
+    checked: {
+      value: '20',
+      feedback: {
+        tone: 'success',
+        title: 'Complete',
+        body: 'Rth = 30 / 1.5 = 20 Ω.',
+      },
+    },
+  },
+];
+
+// Profile 4 ("independent"): 3 steps. Drops intermediate scaffolding and keeps
+// only the goal checkpoint plus direct Vth and Rth entries.
+export const profile4Steps: Step[] = [
+  {
+    kind: 'multi_value',
+    number: 1,
+    prompt: 'Goal: find the Thevenin equivalent at terminals a, b.',
+    helperText: 'Enter the two quantities that define it.',
+    actionLabel: 'Check Solution',
+    inputs: [
+      { label: 'VALUE 1' },
+      { label: 'VALUE 2' },
+    ],
+    filled: { values: ['Vth', 'Rth'] },
+    checked: {
+      values: ['Vth', 'Rth'],
+      feedback: {
+        tone: 'success',
+        title: 'Ready',
+        body: 'Find Vth and Rth for the equivalent.',
+      },
+    },
+  },
+  {
+    kind: 'numeric_unit',
+    number: 2,
+    prompt: 'Enter Vth.',
+    helperText: 'Open-circuit voltage at terminals a-b.',
+    fieldLabel: 'Value of Vth:',
+    leftLabel: 'Vth =',
+    unit: 'V',
+    placeholder: '0.00',
+    actionLabel: 'Check Solution',
+    filled: { value: '30' },
+    checked: {
+      value: '30',
+      feedback: {
+        tone: 'success',
+        title: 'Correct',
+        body: 'Vth = 30 V.',
+      },
+    },
+  },
+  {
+    kind: 'numeric_unit',
+    number: 3,
+    prompt: 'Enter Rth.',
+    helperText: 'Equivalent resistance at terminals a-b.',
+    fieldLabel: 'Value of Rth:',
+    leftLabel: 'Rth =',
+    unit: 'Ω',
+    placeholder: '0.00',
+    actionLabel: 'Check Solution',
+    filled: { value: '20' },
+    checked: {
+      value: '20',
+      feedback: {
+        tone: 'success',
+        title: 'Complete',
+        body: 'Rth = 20 Ω. The Thevenin equivalent is complete.',
+      },
+    },
+  },
+];
 
 export const stepsByProfile: Record<ProfileId, Step[]> = {
   '1': profile1Steps,
   '2': profile2Steps,
   '3': profile3Steps,
+  '4': profile4Steps,
 };
 
-// Back-compat for the showcase route, which previews profile 1.
 export const mockSteps = profile1Steps;
 export const TOTAL_STEPS = profile1Steps.length;

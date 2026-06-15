@@ -48,6 +48,7 @@ export type LearnerProfile = 'starter' | 'exploring' | 'distracted' | 'independe
 export type Topic = 'kvl' | 'kcl' | 'phasors' | 'impedance' | 'thevenin';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type StepType = 'mcq' | 'numeric' | 'planning' | 'open' | 'drawing_task';
+export type CircuitInteractionType = 'ground_node' | 'short_mesh';
 
 export interface PublicProblem {
   id: string;
@@ -85,6 +86,7 @@ export interface ScaffoldStep {
   step_type: StepType;
   prompt_text: string;
   options: ScaffoldStepOption[] | null;
+  interaction_type?: CircuitInteractionType | null;
 }
 
 export interface ProblemScaffold {

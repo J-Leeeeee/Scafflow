@@ -13,6 +13,7 @@
 export type StepState = 'empty' | 'filled' | 'checked';
 
 export type FeedbackTone = 'success' | 'warning' | 'error';
+export type CanvasTask = 'ground_node' | 'short_mesh';
 
 export interface Feedback {
   tone: FeedbackTone;
@@ -45,6 +46,7 @@ export interface CommonStep {
   helperText?: string;
   actionLabel: string;
   circuitOverlay?: CircuitOverlay;
+  canvasTask?: CanvasTask;
 }
 
 export interface McqStepDef extends CommonStep {

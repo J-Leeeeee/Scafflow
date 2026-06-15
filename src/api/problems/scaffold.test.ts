@@ -26,22 +26,33 @@ beforeEach(() => jest.clearAllMocks());
 // ── GET /api/problems/:id/scaffold ────────────────────────────────────────────
 
 describe('GET /api/problems/:id/scaffold', () => {
-  it('returns 400 when learner_profile is null', async () => {
-    (mockPool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ learner_profile: null }] });
+  it('defaults to starter and returns empty steps when learner_profile is null', async () => {
+    (mockPool.query as jest.Mock)
+      .mockResolvedValueOnce({ rows: [{ learner_profile: null }] })
+      .mockResolvedValueOnce({ rows: [] });
     const req = { params: { id: 'p1' }, studentId: 'stu-1' } as unknown as AuthRequest;
     const res = makeRes();
     await getScaffold(req, res);
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      learner_profile: 'starter',
+      total_steps: 0,
+      steps: [],
+    }));
   });
 
-  it('returns 404 when no variant exists for the profile', async () => {
+  it('returns 200 with empty steps when no variant exists for the profile', async () => {
     (mockPool.query as jest.Mock)
       .mockResolvedValueOnce({ rows: [{ learner_profile: 'starter' }] })
       .mockResolvedValueOnce({ rows: [] });
     const req = { params: { id: 'p1' }, studentId: 'stu-1' } as unknown as AuthRequest;
     const res = makeRes();
     await getScaffold(req, res);
-    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      total_steps: 0,
+      steps: [],
+    }));
   });
 
   it('returns 200 with steps and strips is_correct from mcq options', async () => {
@@ -125,6 +136,7 @@ describe('POST /api/problems/:id/steps/:stepId/submit', () => {
         rows: [{
           id: 'step-1',
           step_type: 'mcq',
+          prompt_text: 'Pick a method.',
           options: [
             { key: 'A', text: 'Nodal', is_correct: true },
             { key: 'B', text: 'Mesh',  is_correct: false },
@@ -153,6 +165,7 @@ describe('POST /api/problems/:id/steps/:stepId/submit', () => {
         rows: [{
           id: 'step-1',
           step_type: 'mcq',
+          prompt_text: 'Pick a method.',
           options: [
             { key: 'A', text: 'Nodal', is_correct: true  },
             { key: 'B', text: 'Mesh',  is_correct: false },
@@ -187,6 +200,7 @@ describe('POST /api/problems/:id/steps/:stepId/submit', () => {
         rows: [{
           id: 'step-1',
           step_type: 'mcq',
+          prompt_text: 'Pick a method.',
           options: [
             { key: 'A', text: 'Nodal', is_correct: true  },
             { key: 'B', text: 'Mesh',  is_correct: false },
@@ -219,6 +233,7 @@ describe('POST /api/problems/:id/steps/:stepId/submit', () => {
         rows: [{
           id: 'step-9',
           step_type: 'numeric',
+          prompt_text: 'Enter Vth.',
           options: null,
           ground_truth_answer: 21.333,
           tolerance: 0.01,
@@ -244,6 +259,7 @@ describe('POST /api/problems/:id/steps/:stepId/submit', () => {
         rows: [{
           id: 'step-vth',
           step_type: 'numeric',
+          prompt_text: 'Enter Vth.',
           options: null,
           ground_truth_answer: null,
           tolerance: 0.01,
@@ -269,6 +285,7 @@ describe('POST /api/problems/:id/steps/:stepId/submit', () => {
         rows: [{
           id: 'step-draw',
           step_type: 'drawing_task',
+          prompt_text: 'Short terminals a and b, then label mesh loops.',
           options: null,
           ground_truth_answer: null,
           tolerance: null,
@@ -302,6 +319,7 @@ describe('POST /api/problems/:id/steps/:stepId/submit', () => {
         rows: [{
           id: 'step-draw',
           step_type: 'drawing_task',
+          prompt_text: 'Short terminals a and b, then label mesh loops.',
           options: null,
           ground_truth_answer: null,
           tolerance: null,
@@ -335,6 +353,7 @@ describe('POST /api/problems/:id/steps/:stepId/submit', () => {
         rows: [{
           id: 'step-0',
           step_type: 'planning',
+          prompt_text: 'Goal: find Vth, Rth.',
           options: null,
           ground_truth_answer: null,
           tolerance: null,

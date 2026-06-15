@@ -1,0 +1,509 @@
+# =============================================================================
+# Homework Set 1 — Profile step specs
+# Source of truth for updating frontend/src/design/mockSteps.ts
+# =============================================================================
+#
+# HOW TO USE
+# 1. Fill prompt / helperText / actionLabel from Figma (unless reuse_from_profile1.copy_prompt is true)
+# 2. Pick `kind` from the cheat sheet below
+# 3. Use `reuse_from_profile1` on every step — tells an agent exactly what to lift from Profile 1
+# 4. Paste this file into Agent mode with: "Update profileNSteps from this YAML"
+#
+# reuse_from_profile1 fields (per step):
+#   step: <1-12> | null     — Profile 1 step with the same learning objective (null = new in this profile)
+#   profile1_kind: <kind>   — only when kind_changed: true; the P1 step's interaction type
+#   copy_answer: true|false  — copy filled/checked answer values from profile_1_reference
+#   copy_feedback: true|false — copy feedback title/body from profile1Steps in mockSteps.ts
+#   copy_prompt: true|false  — copy prompt (and usually actionLabel) verbatim from Profile 1
+#   kind_changed: true|false — true when this profile uses a different step kind than Profile 1
+#   notes: <string>          — optional human/agent hint (e.g. why kind differs)
+#
+# KIND CHEAT SHEET
+#   mcq                 — 4 circuit diagram options (A–D)
+#   multi_value         — 1+ text fields (VALUE 1/2, or "Vth =")
+#   select_in_diagram   — click node/terminals on circuit
+#   numeric_plain       — single number, no unit
+#   numeric_unit        — number with V / A / Ω
+#   labeled_equations   — KCL or MESH equation lines
+#   drawing_task        — interactive canvas (short circuit, label loops)
+#   priors_then_input   — shows prior values, then one numeric field
+#   dual_numeric_unit   — two numeric fields with units on one screen (e.g. Vth + Rth)
+# CIRCUIT OVERLAY VALUES (select_in_diagram / labeled_equations)
+#   none | highlight_node_va | highlight_terminals_ab | mesh_loops | mesh_loop_1
+#
+# MCQ OPTION KINDS
+#   voltage_series | current_series | current_parallel | voltage_parallel
+# =============================================================================
+
+homework:
+  title: Homework Set 1
+  goal: Find the Thévenin equivalent at terminals a, b.
+
+# Quick lookup — Profile 1 steps (source for copy_* flags below)
+profile_1_reference:
+  steps:
+    1:  { kind: mcq,                 prompt_key: thevenin_model_mcq }
+    2:  { kind: multi_value,         prompt_key: identify_vth_rth,         answer: { values: [Vth, Rth] } }
+    3:  { kind: multi_value,         prompt_key: vth_terminals_text,       answer: { values: [Vab] } }
+    4:  { kind: select_in_diagram,   prompt_key: choose_ground,            answer: { overlay: highlight_node_va } }
+    5:  { kind: numeric_plain,       prompt_key: essential_node_count,     answer: { value: "3" } }
+    6:  { kind: numeric_plain,       prompt_key: kcl_equation_count,       answer: { value: "2" } }
+    7:  { kind: labeled_equations,   prompt_key: kcl_equations,            answer: { equations: ["(VA-9)/20+(VA-VB)/60-1.8=0", "(VB-VA)/60+VB/25+VB/10=0"] } }
+    8:  { kind: numeric_unit,        prompt_key: solve_vth,                answer: { value: "30" }, unit: V }
+    9:  { kind: drawing_task,        prompt_key: isc_drawing,              answer: {} }
+    10: { kind: labeled_equations,   prompt_key: mesh_equations,           answer: { equations: ["5*I1 + 20*(I1 - I2) = 9", "20*(I2 - I1) + 25*I2 + 60*(I2 - I3) = 0", "60*(I3 - I2) + 10*I3 = 0"] } }
+    11: { kind: numeric_unit,        prompt_key: solve_isc,                answer: { value: "1.5" }, unit: A }
+    12: { kind: priors_then_input,   prompt_key: solve_rth,                answer: { value: "20" }, priors: ["Vth = 30 V", "Isc = 1.5 A"], unit: Ω }
+
+# =============================================================================
+# PROFILE 2 — "exploring" — 11 steps
+# Figma: Profile Prototypes (Copy) → section "Profile 2" (node 29:422)
+#
+# QUICK SUMMARY — what to copy from Profile 1 (profile1Steps in mockSteps.ts):
+#   P2 | P1 | copy_answer | copy_feedback | copy_prompt | kind_changed | notes
+#   ---+----+-------------+---------------+-------------+--------------+------
+#    1 |  2 | yes         | yes           | yes         | no           | P1 step 1 dropped
+#    2 |  3 | yes         | no (Figma)    | yes         | YES          | text → diagram click
+#    3 |  — | —           | —             | —           | —            | NEW method MCQ
+#    4 |  6 | yes         | yes           | yes         | no           | P1 steps 4–5 dropped
+#    5 |  7 | yes         | yes           | yes         | no           | Figma 2-phase UI merged
+#    6 |  8 | yes         | yes           | yes         | no           |
+#    7 |  — | —           | —             | —           | —            | NEW Rth-method MCQ
+#    8 |  9 | yes         | yes           | yes         | no           | helperText differs
+#    9 | 10 | yes         | yes           | yes         | no           |
+#   10 | 11 | yes         | yes           | yes         | no           |
+#   11 | 12 | yes         | yes           | yes         | no           |
+#
+# dropped_vs_profile_1: [1, 4, 5] — Thévenin model MCQ, ground node, essential-node count
+# =============================================================================
+profile_2:
+  learner_profile: exploring
+  total_steps: 11
+  dropped_vs_profile_1: [1, 4, 5]
+  figma_file_key: qWB8UPBr4Us99ABkRspWRQ
+
+  steps:
+    - number: 1
+      kind: multi_value
+      reuse_from_profile1:
+        step: 2
+        copy_answer: true
+        copy_feedback: true
+        copy_prompt: true
+        kind_changed: false
+        notes: Same question as P1 step 2; P1 step 1 (model MCQ) is dropped in Profile 2.
+      figma_frame: profile 2 step 1
+      prompt: Identify 2 values for Thevenin equivalent
+      actionLabel: Check Solution
+      inputs:
+        - { label: "VALUE 1" }
+        - { label: "VALUE 2" }
+      answer: { values: [Vth, Rth] }
+      feedback:
+        title: Excellent
+        body: For every Thevenin equivalent problem we need to find Vth and Rth
+
+    - number: 2
+      kind: select_in_diagram
+      reuse_from_profile1:
+        step: 3
+        profile1_kind: multi_value
+        copy_answer: true
+        copy_feedback: false
+        copy_prompt: true
+        kind_changed: true
+        notes: Same objective as P1 step 3 (Vth = Vab) but P2 uses diagram click; feedback from Figma P2 checked frame.
+      figma_frame: profile 2 step 2
+      prompt: "Let's start from finding Vth.\nWhere is Vth in our diagram?"
+      helperText: Select the Vth in the circuit diagram below.
+      actionLabel: Confirm Selection
+      overlay: highlight_terminals_ab
+      answer: { overlay: highlight_terminals_ab }
+      feedback:
+        title: Excellent
+        body: Find Vth is the same to find Vab
+
+    - number: 3
+      kind: mcq
+      mcq_style: method_text
+      reuse_from_profile1: null
+      figma_frame: profile 2 step 3
+      notes: Profile-2-only question — method picker (Nodal / Mesh / Source Transformation). No P1 equivalent.
+      prompt: Select Your Method
+      helperText: Which analysis method will you use to find Vth?
+      actionLabel: Confirm Method
+      method_options:
+        - { key: A, label: Nodal Analysis, sublabel: Apply KCL at nodes to find voltage }
+        - { key: B, label: Mesh Analysis, sublabel: Apply KVL to mesh currents }
+        - { key: C, label: Source Transformation, sublabel: Simplify circuit by converting sources }
+      answer: { selectedIndex: 0 }
+      feedback:
+        title: Good
+        body: Nodal analysis is a solid choice for finding Vth.
+
+    - number: 4
+      kind: numeric_plain
+      reuse_from_profile1:
+        step: 6
+        copy_answer: true
+        copy_feedback: true
+        copy_prompt: true
+        kind_changed: false
+        notes: Same as P1 step 6; P1 steps 4–5 (ground + essential nodes) are dropped in Profile 2.
+      figma_frame: profile 2 step 4
+      prompt: How many KCL equations do we need to solve for Vth
+      helperText: "Enter the number of equations we need:"
+      actionLabel: Check Solution
+      answer: { value: "2" }
+      feedback:
+        title: Correct
+        body: With ground chosen, the two unknown node voltages need 2 KCL equations.
+
+    - number: 5
+      kind: labeled_equations
+      reuse_from_profile1:
+        step: 7
+        copy_answer: true
+        copy_feedback: true
+        copy_prompt: true
+        kind_changed: false
+        notes: Same as P1 step 7; Figma shows two UI phases (KCL 1 then KCL 1+2) merged into one step here.
+      figma_frame: profile 2 step 5 phase 1 + phase 2
+      prompt: Now set up your KCL equation at the highlighted node
+      actionLabel: Check Solution
+      prefix: KCL
+      circuitOverlay: highlight_node_va
+      equation_count: 2
+      answer:
+        equations:
+          - "(VA-9)/20+(VA-VB)/60-1.8=0"
+          - "(VB-VA)/60+VB/25+VB/10=0"
+      feedback:
+        title: Excellent
+        body: Both node equations look right — solve them simultaneously next.
+
+    - number: 6
+      kind: numeric_unit
+      reuse_from_profile1:
+        step: 8
+        copy_answer: true
+        copy_feedback: true
+        copy_prompt: true
+        kind_changed: false
+      figma_frame: profile 2 step 6
+      prompt: Great, now solve the previous three KCL equations and get your value for Vth.
+      helperText: "Calculate the Vth(remember Vth = Va - Vb)"
+      actionLabel: Check Solution
+      fieldLabel: "Value of Vth:"
+      leftLabel: "Vth ="
+      unit: V
+      placeholder: "0.00"
+      answer: { value: "30" }
+      feedback:
+        title: Excellent
+        body: Vth = 30 V — that matches the open-circuit voltage across terminals a–b.
+
+    - number: 7
+      kind: mcq
+      mcq_style: method_text
+      reuse_from_profile1: null
+      figma_frame: profile 2 step 7
+      notes: Profile-2-only question — Rth method picker (Isc / dead-network / source transformation). No P1 equivalent.
+      prompt: Nice! Now we need to find Rth using one of the following methods
+      helperText: "Select your method:"
+      actionLabel: Confirm Method
+      method_options:
+        - { key: A, label: Use Isc (Short-circuit current), sublabel: "Find short-circuit current, then Rth = Vth / Isc" }
+        - { key: B, label: Dead-network analysis, sublabel: Deactivate all sources and find equivalent resistance }
+        - { key: C, label: Source Transformation, sublabel: Simplify circuit by converting sources }
+      answer: { selectedIndex: 0 }
+      feedback:
+        title: Good
+        body: The Isc method pairs well with the Vth you already found.
+
+    - number: 8
+      kind: drawing_task
+      reuse_from_profile1:
+        step: 9
+        copy_answer: true
+        copy_feedback: true
+        copy_prompt: true
+        kind_changed: false
+        notes: Same as P1 step 9; helperText wording differs slightly in Figma (sketchpad vs interactive canvas).
+      figma_frame: profile 2 step 8
+      prompt: Before we can find Rth, we need to find Isc.
+      helperText: "Using the sketchpad on the right, redraw the circuit diagram and label all mesh currents/node voltages needed to determine the short-circuit current."
+      actionLabel: Check Drawing
+      answer: {}
+      feedback:
+        title: Nice sketch
+        body: Your relabeled diagram shows the three mesh loops needed for Isc.
+
+    - number: 9
+      kind: labeled_equations
+      reuse_from_profile1:
+        step: 10
+        copy_answer: true
+        copy_feedback: true
+        copy_prompt: true
+        kind_changed: false
+      figma_frame: profile 2 step 9 phase 1
+      prompt: Now set up the mesh current equations for the circuit above
+      actionLabel: Check Equations
+      prefix: MESH
+      circuitOverlay: mesh_loops
+      equation_count: 3
+      answer:
+        equations:
+          - "5*I1 + 20*(I1 - I2) = 9"
+          - "20*(I2 - I1) + 25*I2 + 60*(I2 - I3) = 0"
+          - "60*(I3 - I2) + 10*I3 = 0"
+      feedback:
+        title: Great
+        body: All three mesh equations are valid — solve for I3 to get Isc.
+
+    - number: 10
+      kind: numeric_unit
+      reuse_from_profile1:
+        step: 11
+        copy_answer: true
+        copy_feedback: true
+        copy_prompt: true
+        kind_changed: false
+      figma_frame: profile 2 step 10
+      prompt: Great, now solve and enter your value for Isc.
+      helperText: "Calculate the short-circuit current.(Think about what's the relation of Isc and I1, I2, and I3)"
+      actionLabel: Check Solution
+      fieldLabel: "Final value of Isc:"
+      leftLabel: "Isc ="
+      unit: A
+      placeholder: "0.00"
+      answer: { value: "1.5" }
+      feedback:
+        title: Right
+        body: Isc = 1.5 A — exactly the current through the shorted terminals.
+
+    - number: 11
+      kind: priors_then_input
+      reuse_from_profile1:
+        step: 12
+        copy_answer: true
+        copy_feedback: true
+        copy_prompt: true
+        kind_changed: false
+      figma_frame: profile 2 step 11
+      prompt: Great, now solve and enter your value for Rth.
+      helperText: Recall the values for Vth and Isc you got before then calculate the final equivalent resistance.
+      actionLabel: Check Solution
+      priors: ["Vth = 30 V", "Isc = 1.5 A"]
+      fieldLabel: "Final value of Rth:"
+      leftLabel: "Rth ="
+      unit: Ω
+      placeholder: "0.00"
+      answer: { value: "20" }
+      feedback:
+        title: Excellent
+        body: Rth = Vth / Isc = 30 / 1.5 = 20 Ω. The Thévenin equivalent is complete.
+
+# =============================================================================
+# PROFILE 3 — "distracted" — 6 steps
+# Figma: Profile Prototypes (Copy) → section "Profile 3" (node 4:2)
+#
+# QUICK SUMMARY — what to copy from Profile 1 (profile1Steps in mockSteps.ts):
+#   P3 | P1 | copy_answer | copy_feedback | copy_prompt | kind_changed | notes
+#   ---+----+-------------+---------------+-------------+--------------+------
+#    1 |  — | —           | —             | no (Figma)  | —            | NEW Vth-method MCQ (same shape as P2 step 3)
+#    2 |  4 | yes         | yes           | no (import) | no           | No Figma frame (STEP 2/6 missing); prompt from import script
+#    3 |7+8 | partial     | no (Figma)    | no (Figma)  | YES          | KCL×3 + Vth numeric merged (Figma STEP 3/6)
+#    4 |  — | —           | —             | no (Figma)  | —            | NEW Rth-method MCQ (same shape as P2 step 7)
+#    5 |9-11| partial     | no (Figma)    | no (Figma)  | YES          | Short-circuit KCL + Vab + Isc merged (Figma STEP 5/6)
+#    6 | 12 | yes         | no (Figma)    | yes         | no           | Figma omits priors block; answer still Rth = 20
+#
+# dropped_vs_profile_1: [1, 2, 3, 5, 6, 7, 9, 10, 11] — model MCQ, name targets, Vab, node/KCL counts, separate mesh & drawing steps
+# =============================================================================
+profile_3:
+  learner_profile: distracted
+  total_steps: 6
+  dropped_vs_profile_1: [1, 2, 3, 5, 6, 7, 9, 10, 11]
+  figma_file_key: qWB8UPBr4Us99ABkRspWRQ
+
+  steps:
+    - number: 1
+      kind: mcq
+      mcq_style: method_text
+      reuse_from_profile1: null
+      figma_frame: profile 3 step 1 select + step 1 check
+      notes: Profile-3-only opener — pick nodal/mesh/source-transformation for Vth. Same cards as Profile 2 step 3.
+      prompt: Select Your Method
+      helperText: Which analysis method will you use to find Vth?
+      actionLabel: Confirm Method
+      method_options:
+        - { key: A, label: Nodal Analysis, sublabel: Apply KCL at nodes to find voltage }
+        - { key: B, label: Mesh Analysis, sublabel: Apply KVL to mesh currents }
+        - { key: C, label: Source Transformation, sublabel: Simplify circuit by converting sources }
+      answer: { selectedIndex: 0 }
+      feedback:
+        title: Excellent Choice!
+        body: Nodal Analysis is perfect here because of the common reference node.
+
+    - number: 2
+      kind: select_in_diagram
+      reuse_from_profile1:
+        step: 4
+        copy_answer: true
+        copy_feedback: true
+        copy_prompt: false
+        kind_changed: false
+        notes: Ground-node pick on scratchpad; no dedicated Profile 3 Figma frame (STEP 2/6 absent). Prompt from import-thevenin-problem.ts DISTRACTED_STEPS.
+      figma_frame: (no frame — infer from import script + P1 step 4)
+      prompt: Set up your circuit and choose a reference / ground node.
+      helperText: Select a reference/ground node by clicking a node on the interactive circuit canvas.
+      actionLabel: Confirm Selection
+      overlay: highlight_node_va
+      answer: { overlay: highlight_node_va }
+      feedback:
+        title: Nice
+        body: Picking the bottom rail as ground simplifies the KCL equations.
+
+    - number: 3
+      kind: labeled_equations
+      reuse_from_profile1:
+        step: 7
+        profile1_kind: labeled_equations
+        copy_answer: partial
+        copy_feedback: false
+        copy_prompt: false
+        kind_changed: true
+        notes: Figma merges P1 steps 7–8 into one screen — three KCL lines plus Vth numeric field. Checked frame reuses step-1 feedback copy in Figma (placeholder).
+      figma_frame: profile 3 step 3 + step 3 answer typed + step 3 check
+      prompt: Now set up your KCL equations and enter your value for Vth.
+      helperText: "Enter the correct KCL equations:"
+      actionLabel: Check Solution
+      prefix: KCL
+      equation_count: 3
+      fieldLabel: "Final value of Vth:"
+      leftLabel: "Vth ="
+      unit: V
+      placeholder: "0.00"
+      answer:
+        equations:
+          - "(V1-9)/5+V1/25+1.8=0"
+          - "(Va-9)/20+(Va-Vb)/60-1.8=0"
+          - "(Vb-Va)/60+Vb/10=0"
+        value: "30"
+      feedback:
+        title: Excellent Choice!
+        body: Nodal Analysis is perfect here because of the common reference node.
+
+    - number: 4
+      kind: mcq
+      mcq_style: method_text
+      reuse_from_profile1: null
+      figma_frame: profile 3 step 4 + step 4 select + step 4 check
+      notes: Profile-3-only Rth-method picker — same cards as Profile 2 step 7.
+      prompt: Nice! Now we need to find Rth using one of the following methods
+      helperText: "Select your method:"
+      actionLabel: Confirm Method
+      method_options:
+        - { key: A, label: Use Isc (Short-circuit current), sublabel: "Find short-circuit current, then Rth = Vth / Isc" }
+        - { key: B, label: Dead-network analysis, sublabel: Deactivate all sources and find equivalent resistance }
+        - { key: C, label: Source Transformation, sublabel: Simplify circuit by converting sources }
+      answer: { selectedIndex: 0 }
+      feedback:
+        title: Excellent!
+        body: Using Isc is a reliable method to determine Rth when sources are active.
+
+    - number: 5
+      kind: numeric_unit
+      reuse_from_profile1:
+        step: 11
+        profile1_kind: numeric_unit
+        copy_answer: true
+        copy_feedback: false
+        copy_prompt: false
+        kind_changed: false
+        notes: Figma STEP 5/6 also shows open KCL-at-merged-node and Vab fields above Isc; empty-frame prompt is canonical (filled frame alt mentions mesh currents).
+      figma_frame: profile 3 step 5 + step 5 filled + step 5 checked
+      prompt: "To find Isc, connect terminals a and b with a wire."
+      helperText: "This means: Va = Vb = Vab = 0. Write KCL at the merged node, then enter Isc."
+      actionLabel: Check Solution
+      fieldLabel: "Isc ="
+      leftLabel: "Isc ="
+      unit: A
+      placeholder: "0.00"
+      answer: { value: "1.5" }
+      feedback:
+        title: Excellent!
+        body: Isc = 1.5 A — the short-circuit current through terminals a–b.
+
+    - number: 6
+      kind: numeric_unit
+      reuse_from_profile1:
+        step: 12
+        profile1_kind: priors_then_input
+        copy_answer: true
+        copy_feedback: false
+        copy_prompt: true
+        kind_changed: true
+        notes: Figma uses numeric_unit only (no priors chips). P1 step 12 priors omitted in design but Vth/Isc values unchanged.
+      figma_frame: profile 3 step 6 + step 6 filled + step 6 checked
+      prompt: Great, now solve and enter your value for Rth.
+      helperText: Calculate the final equivalent resistance.
+      actionLabel: Check Solution
+      fieldLabel: "Final value of Rth:"
+      leftLabel: "Rth ="
+      unit: Ω
+      placeholder: "0.00"
+      answer: { value: "20" }
+      feedback:
+        title: Excellent!
+        body: Rth = Vth / Isc = 30 / 1.5 = 20 Ω. The Thévenin equivalent is complete.
+
+# =============================================================================
+# PROFILE 4 — "independent" — 1 step
+# Figma: Profile Prototypes (Copy) → section "Profile 4" (node 29:419)
+#
+# QUICK SUMMARY — what to copy from Profile 1 (profile1Steps in mockSteps.ts):
+#   P4 | P1 | copy_answer | copy_feedback | copy_prompt | kind_changed | notes
+#   ---+----+-------------+---------------+-------------+--------------+------
+#    1 |8+12| yes         | no (Figma)    | no (Figma)  | YES          | Single screen merges Vth + Rth; goal lives in problem panel
+#
+# dropped_vs_profile_1: [1, 2, 3, 4, 5, 6, 7, 9, 10, 11] — all scaffolding; only final Vth/Rth entry remains
+# Figma sidebar shows STEP 6/6 (diagnostic position), but Profile 4 itself is one combined checkpoint.
+# =============================================================================
+profile_4:
+  learner_profile: independent
+  total_steps: 1
+  dropped_vs_profile_1: [1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+  figma_file_key: qWB8UPBr4Us99ABkRspWRQ
+
+  steps:
+    - number: 1
+      kind: dual_numeric_unit
+      reuse_from_profile1:
+        step: 8
+        profile1_kind: numeric_unit
+        copy_answer: true
+        copy_feedback: false
+        copy_prompt: false
+        kind_changed: true
+        notes: Figma merges P1 steps 8 (Vth) and 12 (Rth) on one screen. Goal text is in the problem panel, not a separate step. Rth answer copied from P1 step 12.
+      figma_frame: profile 4 step1 + step 1 filled + step 1 checked
+      problem_goal: "GOAL: Find the Thévenin equivalent at terminals a, b."
+      prompt: Solve the value for Vth and Rth.
+      helperText: "use proper method to solve for Vth and Rth (think about removing 60Ω resistor)"
+      actionLabel: Check Solution
+      fields:
+        - fieldLabel: "Find value of Vth:"
+          leftLabel: "Vth ="
+          unit: V
+          placeholder: "0.00"
+        - fieldLabel: "Find value of Rth:"
+          leftLabel: "Rth ="
+          unit: Ω
+          placeholder: "0.00"
+      answer:
+        values: ["30", "20"]
+      feedback:
+        title: Excellent!
+        body: Vth = 30 V and Rth = 20 Ω. The Thévenin equivalent is complete.

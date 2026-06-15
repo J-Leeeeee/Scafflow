@@ -13,6 +13,8 @@ interface SelectInDiagramStepProps {
  * handling — wiring lives in stage 4.
  */
 export function SelectInDiagramStep({ step, state }: SelectInDiagramStepProps) {
+  if (step.canvasTask) return null;
+
   const overlay =
     state === 'filled' ? step.filled.overlay
       : state === 'checked' ? step.checked.overlay
