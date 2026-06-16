@@ -1,4 +1,5 @@
 import type { Step, StepState, Feedback as FeedbackData } from '../types';
+import { MathText } from '../../components/MathText';
 import { Feedback } from './Feedback';
 import { McqStep } from './steps/McqStep';
 import { MultiValueStep } from './steps/MultiValueStep';
@@ -51,10 +52,12 @@ export function StepCard({
   return (
     <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
       <h2 className="text-[15px] leading-[22px] font-bold whitespace-pre-line text-black">
-        {step.prompt}
+        <MathText text={step.prompt} />
       </h2>
       {step.helperText && (
-        <p className="mt-2 text-[13px] leading-[19px] text-[#6A7282]">{step.helperText}</p>
+        <p className="mt-2 text-[13px] leading-[19px] text-[#6A7282]">
+          <MathText text={step.helperText} />
+        </p>
       )}
 
       <StepBody

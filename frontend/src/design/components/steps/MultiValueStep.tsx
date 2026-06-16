@@ -1,4 +1,5 @@
 import { MathAnswerInput } from '../../../components/MathAnswerInput';
+import { MathText } from '../../../components/MathText';
 import type { MultiValueStepDef, StepState } from '../../types';
 
 interface MultiValueStepProps {
@@ -24,7 +25,7 @@ export function MultiValueStep({ step, state, values: controlledValues, onChange
           <MathAnswerInput
             value={values[index] ?? ''}
             onChange={(next) => onChange?.(index, next)}
-            label={input.label}
+            label={<MathText text={input.label} />}
             labelClassName="block text-[12px] font-medium tracking-[0.05em] text-[#5D5D5D] uppercase"
             placeholder={input.placeholder ?? ''}
             inputClassName={`mt-1.5 h-10 w-full rounded-md border bg-white px-3 text-[14px] text-black ${

@@ -25,6 +25,19 @@
   box-sizing: border-box;
 }
 
+/* Inline KaTeX rendered by <MathText>. Reset KaTeX's default 1.21em so math
+   matches the surrounding copy size, reset whitespace so `pre-line` parents
+   (e.g. step prompts) don't disturb KaTeX's internal spacing, and reset
+   text-transform so `uppercase` label parents don't mangle subscripts. */
+.mathtext-math {
+  white-space: normal;
+  text-transform: none;
+}
+
+.mathtext-math .katex {
+  font-size: 1em;
+}
+
 html,
 body,
 #root {

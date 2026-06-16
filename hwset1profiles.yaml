@@ -101,7 +101,7 @@ profile_2:
       answer: { values: [Vth, Rth] }
       feedback:
         title: Excellent
-        body: For every Thevenin equivalent problem we need to find Vth and Rth
+        body: 'For every Thevenin equivalent problem we need to find $V_{\mathrm{th}}$ and $R_{\mathrm{th}}$'
 
     - number: 2
       kind: select_in_diagram
@@ -114,14 +114,14 @@ profile_2:
         kind_changed: true
         notes: Same objective as P1 step 3 (Vth = Vab) but P2 uses diagram click; feedback from Figma P2 checked frame.
       figma_frame: profile 2 step 2
-      prompt: "Let's start from finding Vth.\nWhere is Vth in our diagram?"
-      helperText: Select the Vth in the circuit diagram below.
+      prompt: "Let's start from finding $V_{\\mathrm{th}}$.\nWhere is $V_{\\mathrm{th}}$ in our diagram?"
+      helperText: 'Select the $V_{\mathrm{th}}$ in the circuit diagram below.'
       actionLabel: Confirm Selection
       overlay: highlight_terminals_ab
       answer: { overlay: highlight_terminals_ab }
       feedback:
         title: Excellent
-        body: Find Vth is the same to find Vab
+        body: 'Find $V_{\mathrm{th}}$ is the same to find $V_{ab}$'
 
     - number: 3
       kind: mcq
@@ -130,7 +130,7 @@ profile_2:
       figma_frame: profile 2 step 3
       notes: Profile-2-only question — method picker (Nodal / Mesh / Source Transformation). No P1 equivalent.
       prompt: Select Your Method
-      helperText: Which analysis method will you use to find Vth?
+      helperText: 'Which analysis method will you use to find $V_{\mathrm{th}}$?'
       actionLabel: Confirm Method
       method_options:
         - { key: A, label: Nodal Analysis, sublabel: Apply KCL at nodes to find voltage }
@@ -139,7 +139,7 @@ profile_2:
       answer: { selectedIndex: 0 }
       feedback:
         title: Good
-        body: Nodal analysis is a solid choice for finding Vth.
+        body: 'Nodal analysis is a solid choice for finding $V_{\mathrm{th}}$.'
 
     - number: 4
       kind: numeric_plain
@@ -151,7 +151,7 @@ profile_2:
         kind_changed: false
         notes: Same as P1 step 6; P1 steps 4–5 (ground + essential nodes) are dropped in Profile 2.
       figma_frame: profile 2 step 4
-      prompt: How many KCL equations do we need to solve for Vth
+      prompt: 'How many KCL equations do we need to solve for $V_{\mathrm{th}}$'
       helperText: "Enter the number of equations we need:"
       actionLabel: Check Solution
       answer: { value: "2" }
@@ -191,17 +191,17 @@ profile_2:
         copy_prompt: true
         kind_changed: false
       figma_frame: profile 2 step 6
-      prompt: Great, now solve the previous three KCL equations and get your value for Vth.
-      helperText: "Calculate the Vth(remember Vth = Va - Vb)"
+      prompt: 'Great, now solve the previous three KCL equations and get your value for $V_{\mathrm{th}}$.'
+      helperText: 'Calculate the $V_{\mathrm{th}}$(remember $V_{\mathrm{th}} = V_a - V_b$)'
       actionLabel: Check Solution
-      fieldLabel: "Value of Vth:"
-      leftLabel: "Vth ="
+      fieldLabel: 'Value of $V_{\mathrm{th}}$:'
+      leftLabel: '$V_{\mathrm{th}} =$'
       unit: V
       placeholder: "0.00"
       answer: { value: "30" }
       feedback:
         title: Excellent
-        body: Vth = 30 V — that matches the open-circuit voltage across terminals a–b.
+        body: '$V_{\mathrm{th}} = 30\,\mathrm{V}$ — that matches the open-circuit voltage across terminals a–b.'
 
     - number: 7
       kind: mcq
@@ -209,17 +209,17 @@ profile_2:
       reuse_from_profile1: null
       figma_frame: profile 2 step 7
       notes: Profile-2-only question — Rth method picker (Isc / dead-network / source transformation). No P1 equivalent.
-      prompt: Nice! Now we need to find Rth using one of the following methods
+      prompt: 'Nice! Now we need to find $R_{\mathrm{th}}$ using one of the following methods'
       helperText: "Select your method:"
       actionLabel: Confirm Method
       method_options:
-        - { key: A, label: Use Isc (Short-circuit current), sublabel: "Find short-circuit current, then Rth = Vth / Isc" }
+        - { key: A, label: 'Use $I_{\mathrm{sc}}$ (Short-circuit current)', sublabel: 'Find short-circuit current, then $R_{\mathrm{th}} = V_{\mathrm{th}} / I_{\mathrm{sc}}$' }
         - { key: B, label: Dead-network analysis, sublabel: Deactivate all sources and find equivalent resistance }
         - { key: C, label: Source Transformation, sublabel: Simplify circuit by converting sources }
       answer: { selectedIndex: 0 }
       feedback:
         title: Good
-        body: The Isc method pairs well with the Vth you already found.
+        body: 'The $I_{\mathrm{sc}}$ method pairs well with the $V_{\mathrm{th}}$ you already found.'
 
     - number: 8
       kind: drawing_task
@@ -231,13 +231,13 @@ profile_2:
         kind_changed: false
         notes: Same as P1 step 9; helperText wording differs slightly in Figma (sketchpad vs interactive canvas).
       figma_frame: profile 2 step 8
-      prompt: Before we can find Rth, we need to find Isc.
+      prompt: 'Before we can find $R_{\mathrm{th}}$, we need to find $I_{\mathrm{sc}}$.'
       helperText: "Using the sketchpad on the right, redraw the circuit diagram and label all mesh currents/node voltages needed to determine the short-circuit current."
       actionLabel: Check Drawing
       answer: {}
       feedback:
         title: Nice sketch
-        body: Your relabeled diagram shows the three mesh loops needed for Isc.
+        body: 'Your relabeled diagram shows the three mesh loops needed for $I_{\mathrm{sc}}$.'
 
     - number: 9
       kind: labeled_equations
@@ -260,7 +260,7 @@ profile_2:
           - "60*(I3 - I2) + 10*I3 = 0"
       feedback:
         title: Great
-        body: All three mesh equations are valid — solve for I3 to get Isc.
+        body: 'All three mesh equations are valid — solve for $I_3$ to get $I_{\mathrm{sc}}$.'
 
     - number: 10
       kind: numeric_unit
@@ -271,17 +271,17 @@ profile_2:
         copy_prompt: true
         kind_changed: false
       figma_frame: profile 2 step 10
-      prompt: Great, now solve and enter your value for Isc.
-      helperText: "Calculate the short-circuit current.(Think about what's the relation of Isc and I1, I2, and I3)"
+      prompt: 'Great, now solve and enter your value for $I_{\mathrm{sc}}$.'
+      helperText: 'Calculate the short-circuit current.(Think about what''s the relation of $I_{\mathrm{sc}}$ and $I_1$, $I_2$, and $I_3$)'
       actionLabel: Check Solution
-      fieldLabel: "Final value of Isc:"
-      leftLabel: "Isc ="
+      fieldLabel: 'Final value of $I_{\mathrm{sc}}$:'
+      leftLabel: '$I_{\mathrm{sc}} =$'
       unit: A
       placeholder: "0.00"
       answer: { value: "1.5" }
       feedback:
         title: Right
-        body: Isc = 1.5 A — exactly the current through the shorted terminals.
+        body: '$I_{\mathrm{sc}} = 1.5\,\mathrm{A}$ — exactly the current through the shorted terminals.'
 
     - number: 11
       kind: priors_then_input
@@ -292,18 +292,18 @@ profile_2:
         copy_prompt: true
         kind_changed: false
       figma_frame: profile 2 step 11
-      prompt: Great, now solve and enter your value for Rth.
-      helperText: Recall the values for Vth and Isc you got before then calculate the final equivalent resistance.
+      prompt: 'Great, now solve and enter your value for $R_{\mathrm{th}}$.'
+      helperText: 'Recall the values for $V_{\mathrm{th}}$ and $I_{\mathrm{sc}}$ you got before then calculate the final equivalent resistance.'
       actionLabel: Check Solution
-      priors: ["Vth = 30 V", "Isc = 1.5 A"]
-      fieldLabel: "Final value of Rth:"
-      leftLabel: "Rth ="
+      priors: ['$V_{\mathrm{th}} = 30\,\mathrm{V}$', '$I_{\mathrm{sc}} = 1.5\,\mathrm{A}$']
+      fieldLabel: 'Final value of $R_{\mathrm{th}}$:'
+      leftLabel: '$R_{\mathrm{th}} =$'
       unit: Ω
       placeholder: "0.00"
       answer: { value: "20" }
       feedback:
         title: Excellent
-        body: Rth = Vth / Isc = 30 / 1.5 = 20 Ω. The Thévenin equivalent is complete.
+        body: '$R_{\mathrm{th}} = V_{\mathrm{th}} / I_{\mathrm{sc}} = 30 / 1.5 = 20\,\Omega$. The Thévenin equivalent is complete.'
 
 # =============================================================================
 # PROFILE 3 — "distracted" — 6 steps
@@ -335,7 +335,7 @@ profile_3:
       figma_frame: profile 3 step 1 select + step 1 check
       notes: Profile-3-only opener — pick nodal/mesh/source-transformation for Vth. Same cards as Profile 2 step 3.
       prompt: Select Your Method
-      helperText: Which analysis method will you use to find Vth?
+      helperText: 'Which analysis method will you use to find $V_{\mathrm{th}}$?'
       actionLabel: Confirm Method
       method_options:
         - { key: A, label: Nodal Analysis, sublabel: Apply KCL at nodes to find voltage }
@@ -376,13 +376,13 @@ profile_3:
         kind_changed: true
         notes: Figma merges P1 steps 7–8 into one screen — three KCL lines plus Vth numeric field. Checked frame reuses step-1 feedback copy in Figma (placeholder).
       figma_frame: profile 3 step 3 + step 3 answer typed + step 3 check
-      prompt: Now set up your KCL equations and enter your value for Vth.
+      prompt: 'Now set up your KCL equations and enter your value for $V_{\mathrm{th}}$.'
       helperText: "Enter the correct KCL equations:"
       actionLabel: Check Solution
       prefix: KCL
       equation_count: 3
-      fieldLabel: "Final value of Vth:"
-      leftLabel: "Vth ="
+      fieldLabel: 'Final value of $V_{\mathrm{th}}$:'
+      leftLabel: '$V_{\mathrm{th}} =$'
       unit: V
       placeholder: "0.00"
       answer:
@@ -401,17 +401,17 @@ profile_3:
       reuse_from_profile1: null
       figma_frame: profile 3 step 4 + step 4 select + step 4 check
       notes: Profile-3-only Rth-method picker — same cards as Profile 2 step 7.
-      prompt: Nice! Now we need to find Rth using one of the following methods
+      prompt: 'Nice! Now we need to find $R_{\mathrm{th}}$ using one of the following methods'
       helperText: "Select your method:"
       actionLabel: Confirm Method
       method_options:
-        - { key: A, label: Use Isc (Short-circuit current), sublabel: "Find short-circuit current, then Rth = Vth / Isc" }
+        - { key: A, label: 'Use $I_{\mathrm{sc}}$ (Short-circuit current)', sublabel: 'Find short-circuit current, then $R_{\mathrm{th}} = V_{\mathrm{th}} / I_{\mathrm{sc}}$' }
         - { key: B, label: Dead-network analysis, sublabel: Deactivate all sources and find equivalent resistance }
         - { key: C, label: Source Transformation, sublabel: Simplify circuit by converting sources }
       answer: { selectedIndex: 0 }
       feedback:
         title: Excellent!
-        body: Using Isc is a reliable method to determine Rth when sources are active.
+        body: 'Using $I_{\mathrm{sc}}$ is a reliable method to determine $R_{\mathrm{th}}$ when sources are active.'
 
     - number: 5
       kind: numeric_unit
@@ -424,17 +424,17 @@ profile_3:
         kind_changed: false
         notes: Figma STEP 5/6 also shows open KCL-at-merged-node and Vab fields above Isc; empty-frame prompt is canonical (filled frame alt mentions mesh currents).
       figma_frame: profile 3 step 5 + step 5 filled + step 5 checked
-      prompt: "To find Isc, connect terminals a and b with a wire."
-      helperText: "This means: Va = Vb = Vab = 0. Write KCL at the merged node, then enter Isc."
+      prompt: 'To find $I_{\mathrm{sc}}$, connect terminals a and b with a wire.'
+      helperText: 'This means: $V_a = V_b = V_{ab} = 0$. Write KCL at the merged node, then enter $I_{\mathrm{sc}}$.'
       actionLabel: Check Solution
-      fieldLabel: "Isc ="
-      leftLabel: "Isc ="
+      fieldLabel: '$I_{\mathrm{sc}} =$'
+      leftLabel: '$I_{\mathrm{sc}} =$'
       unit: A
       placeholder: "0.00"
       answer: { value: "1.5" }
       feedback:
         title: Excellent!
-        body: Isc = 1.5 A — the short-circuit current through terminals a–b.
+        body: '$I_{\mathrm{sc}} = 1.5\,\mathrm{A}$ — the short-circuit current through terminals a–b.'
 
     - number: 6
       kind: numeric_unit
@@ -447,17 +447,17 @@ profile_3:
         kind_changed: true
         notes: Figma uses numeric_unit only (no priors chips). P1 step 12 priors omitted in design but Vth/Isc values unchanged.
       figma_frame: profile 3 step 6 + step 6 filled + step 6 checked
-      prompt: Great, now solve and enter your value for Rth.
+      prompt: 'Great, now solve and enter your value for $R_{\mathrm{th}}$.'
       helperText: Calculate the final equivalent resistance.
       actionLabel: Check Solution
-      fieldLabel: "Final value of Rth:"
-      leftLabel: "Rth ="
+      fieldLabel: 'Final value of $R_{\mathrm{th}}$:'
+      leftLabel: '$R_{\mathrm{th}} =$'
       unit: Ω
       placeholder: "0.00"
       answer: { value: "20" }
       feedback:
         title: Excellent!
-        body: Rth = Vth / Isc = 30 / 1.5 = 20 Ω. The Thévenin equivalent is complete.
+        body: '$R_{\mathrm{th}} = V_{\mathrm{th}} / I_{\mathrm{sc}} = 30 / 1.5 = 20\,\Omega$. The Thévenin equivalent is complete.'
 
 # =============================================================================
 # PROFILE 4 — "independent" — 1 step
@@ -490,20 +490,20 @@ profile_4:
         notes: Figma merges P1 steps 8 (Vth) and 12 (Rth) on one screen. Goal text is in the problem panel, not a separate step. Rth answer copied from P1 step 12.
       figma_frame: profile 4 step1 + step 1 filled + step 1 checked
       problem_goal: "GOAL: Find the Thévenin equivalent at terminals a, b."
-      prompt: Solve the value for Vth and Rth.
-      helperText: "use proper method to solve for Vth and Rth (think about removing 60Ω resistor)"
+      prompt: 'Solve the value for $V_{\mathrm{th}}$ and $R_{\mathrm{th}}$.'
+      helperText: 'use proper method to solve for $V_{\mathrm{th}}$ and $R_{\mathrm{th}}$ (think about removing $60\,\Omega$ resistor)'
       actionLabel: Check Solution
       fields:
-        - fieldLabel: "Find value of Vth:"
-          leftLabel: "Vth ="
+        - fieldLabel: 'Find value of $V_{\mathrm{th}}$:'
+          leftLabel: '$V_{\mathrm{th}} =$'
           unit: V
           placeholder: "0.00"
-        - fieldLabel: "Find value of Rth:"
-          leftLabel: "Rth ="
+        - fieldLabel: 'Find value of $R_{\mathrm{th}}$:'
+          leftLabel: '$R_{\mathrm{th}} =$'
           unit: Ω
           placeholder: "0.00"
       answer:
         values: ["30", "20"]
       feedback:
         title: Excellent!
-        body: Vth = 30 V and Rth = 20 Ω. The Thévenin equivalent is complete.
+        body: '$V_{\mathrm{th}} = 30\,\mathrm{V}$ and $R_{\mathrm{th}} = 20\,\Omega$. The Thévenin equivalent is complete.'

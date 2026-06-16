@@ -1,4 +1,5 @@
 import { MathAnswerInput } from '../../../components/MathAnswerInput';
+import { MathText } from '../../../components/MathText';
 import type { LabeledEquationsStepDef, StepState } from '../../types';
 
 interface LabeledEquationsStepProps {
@@ -66,9 +67,13 @@ export function LabeledEquationsStep({
 
       {step.valueField && (
         <div className="pt-1">
-          <p className="text-[14px] font-bold text-black">{step.valueField.fieldLabel}</p>
+          <p className="text-[14px] font-bold text-black">
+            <MathText text={step.valueField.fieldLabel} />
+          </p>
           <div className="mt-2 flex items-start gap-2">
-            <span className="pt-2 text-[14px] font-semibold text-black">{step.valueField.leftLabel}</span>
+            <span className="pt-2 text-[14px] font-semibold text-black">
+              <MathText text={step.valueField.leftLabel} />
+            </span>
             <div className="min-w-0 flex-1">
               <MathAnswerInput
                 value={valueFieldValue ?? ''}

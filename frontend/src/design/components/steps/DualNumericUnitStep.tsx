@@ -1,4 +1,5 @@
 import { MathAnswerInput } from '../../../components/MathAnswerInput';
+import { MathText } from '../../../components/MathText';
 import type { DualNumericUnitStepDef, StepState } from '../../types';
 
 interface DualNumericUnitStepProps {
@@ -21,9 +22,13 @@ export function DualNumericUnitStep({ step, state, values: controlledValues, onC
     <div className="mt-3 space-y-4">
       {step.fields.map((field, index) => (
         <div key={field.leftLabel}>
-          <p className="text-[14px] font-bold text-black">{field.fieldLabel}</p>
+          <p className="text-[14px] font-bold text-black">
+            <MathText text={field.fieldLabel} />
+          </p>
           <div className="mt-2 flex items-start gap-2">
-            <span className="pt-2 text-[14px] font-semibold text-black">{field.leftLabel}</span>
+            <span className="pt-2 text-[14px] font-semibold text-black">
+              <MathText text={field.leftLabel} />
+            </span>
             <div className="min-w-0 flex-1">
               <MathAnswerInput
                 value={values[index] ?? ''}

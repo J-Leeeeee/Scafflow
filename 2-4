@@ -1,0 +1,1171 @@
+warning: in the working copy of 'frontend/src/design/components/steps/LabeledEquationsStep.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/design/components/steps/McqStep.tsx', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/frontend/src/design/components/StepCard.tsx b/frontend/src/design/components/StepCard.tsx[m
+[1mindex 2bdec77..16e043f 100644[m
+[1m--- a/frontend/src/design/components/StepCard.tsx[m
+[1m+++ b/frontend/src/design/components/StepCard.tsx[m
+[36m@@ -8,6 +8,7 @@[m [mimport { NumericUnitStep } from './steps/NumericUnitStep';[m
+ import { LabeledEquationsStep } from './steps/LabeledEquationsStep';[m
+ import { DrawingTaskStep } from './steps/DrawingTaskStep';[m
+ import { PriorsThenInputStep } from './steps/PriorsThenInputStep';[m
+[32m+[m[32mimport { DualNumericUnitStep } from './steps/DualNumericUnitStep';[m
+ [m
+ interface StepCardProps {[m
+   step: Step;[m
+[36m@@ -155,6 +156,15 @@[m [mfunction StepBody({[m
+           onChange={(value) => onTextAnswerChange?.(0, value)}[m
+         />[m
+       );[m
+[32m+[m[32m    case 'dual_numeric_unit':[m
+[32m+[m[32m      return ([m
+[32m+[m[32m        <DualNumericUnitStep[m
+[32m+[m[32m          step={step}[m
+[32m+[m[32m          state={state}[m
+[32m+[m[32m          values={answerValues}[m
+[32m+[m[32m          onChange={onTextAnswerChange}[m
+[32m+[m[32m        />[m
+[32m+[m[32m      );[m
+   }[m
+ }[m
+ [m
+[1mdiff --git a/frontend/src/design/components/steps/LabeledEquationsStep.tsx b/frontend/src/design/components/steps/LabeledEquationsStep.tsx[m
+[1mindex 1c795bf..66b37c7 100644[m
+[1m--- a/frontend/src/design/components/steps/LabeledEquationsStep.tsx[m
+[1m+++ b/frontend/src/design/components/steps/LabeledEquationsStep.tsx[m
+[36m@@ -15,6 +15,11 @@[m [minterface LabeledEquationsStepProps {[m
+  * textarea, filled shows 2 (first one with the equation, second empty),[m
+  * checked shows both filled. We honor whatever shape lives in the fixtures[m
+  * for each state.[m
+[32m+[m[32m *[m
+[32m+[m[32m * When `step.valueField` is set (e.g. Profile 3's merged KCL + Vth screen) a[m
+[32m+[m[32m * trailing numeric input is rendered after the equations. The controlled[m
+[32m+[m[32m * `values` array is flat: indices 0..N-1 are equations, index N is the value,[m
+[32m+[m[32m * where N is the canonical equation count (`step.checked.equations.length`).[m
+  */[m
+ export function LabeledEquationsStep({[m
+   step,[m
+[36m@@ -22,11 +27,21 @@[m [mexport function LabeledEquationsStep({[m
+   values: controlledValues,[m
+   onChange,[m
+ }: LabeledEquationsStepProps) {[m
+[31m-  const equations = controlledValues ?? ([m
+[31m-    state === 'filled' ? step.filled.equations[m
+[32m+[m[32m  const equationCount = step.checked.equations.length;[m
+[32m+[m
+[32m+[m[32m  const equations = controlledValues[m
+[32m+[m[32m    ? controlledValues.slice(0, equationCount)[m
+[32m+[m[32m    : (state === 'filled' ? step.filled.equations[m
+       : state === 'checked' ? step.checked.equations[m
+[31m-        : step.empty.equations[m
+[31m-  );[m
+[32m+[m[32m        : step.empty.equations);[m
+[32m+[m
+[32m+[m[32m  const valueFieldValue = step.valueField[m
+[32m+[m[32m    ? (controlledValues[m
+[32m+[m[32m      ? controlledValues[equationCount] ?? ''[m
+[32m+[m[32m      : state === 'filled' ? step.filled.value ?? ''[m
+[32m+[m[32m        : state === 'checked' ? step.checked.value ?? ''[m
+[32m+[m[32m          : '')[m
+[32m+[m[32m    : undefined;[m
+ [m
+   return ([m
+     <div className="mt-4 space-y-3">[m
+[36m@@ -48,6 +63,27 @@[m [mexport function LabeledEquationsStep({[m
+           />[m
+         </div>[m
+       ))}[m
+[32m+[m
+[32m+[m[32m      {step.valueField && ([m
+[32m+[m[32m        <div className="pt-1">[m
+[32m+[m[32m          <p className="text-[14px] font-bold text-black">{step.valueField.fieldLabel}</p>[m
+[32m+[m[32m          <div className="mt-2 flex items-start gap-2">[m
+[32m+[m[32m            <span className="pt-2 text-[14px] font-semibold text-black">{step.valueField.leftLabel}</span>[m
+[32m+[m[32m            <div className="min-w-0 flex-1">[m
+[32m+[m[32m              <MathAnswerInput[m
+[32m+[m[32m                value={valueFieldValue ?? ''}[m
+[32m+[m[32m                onChange={(next) => onChange?.(equationCount, next)}[m
+[32m+[m[32m                mathPreview={false}[m
+[32m+[m[32m                placeholder={step.valueField.placeholder ?? '0.00'}[m
+[32m+[m[32m                inputClassName={`h-10 w-full rounded-md border bg-white px-3 text-[14px] text-black ${[m
+[32m+[m[32m                  valueFieldValue ? 'border-[#10B981] outline-2 outline-[#10B98133]' : 'border-[#E5E7EB]'[m
+[32m+[m[32m                }`}[m
+[32m+[m[32m              />[m
+[32m+[m[32m            </div>[m
+[32m+[m[32m            <span className="pt-2 text-[14px] text-[#1E2939]">{step.valueField.unit}</span>[m
+[32m+[m[32m          </div>[m
+[32m+[m[32m        </div>[m
+[32m+[m[32m      )}[m
+     </div>[m
+   );[m
+ }[m
+[1mdiff --git a/frontend/src/design/components/steps/McqStep.tsx b/frontend/src/design/components/steps/McqStep.tsx[m
+[1mindex 127f4c4..68b221f 100644[m
+[1m--- a/frontend/src/design/components/steps/McqStep.tsx[m
+[1m+++ b/frontend/src/design/components/steps/McqStep.tsx[m
+[36m@@ -15,9 +15,35 @@[m [mexport function McqStep({ step, state, selectedOptionIndex, onSelect }: McqStepP[m
+         : undefined;[m
+   const selectedIndex = selectedOptionIndex ?? fixtureSelectedIndex;[m
+ [m
+[32m+[m[32m  if (step.style === 'method') {[m
+[32m+[m[32m    return ([m
+[32m+[m[32m      <div className="mt-4 space-y-3">[m
+[32m+[m[32m        {step.methodOptions.map((option, index) => {[m
+[32m+[m[32m          const selected = selectedIndex === index;[m
+[32m+[m[32m          return ([m
+[32m+[m[32m            <button[m
+[32m+[m[32m              key={option.key}[m
+[32m+[m[32m              type="button"[m
+[32m+[m[32m              onClick={() => onSelect?.(index)}[m
+[32m+[m[32m              aria-pressed={selected}[m
+[32m+[m[32m              className={`w-full rounded-[10px] border p-3 text-left transition ${[m
+[32m+[m[32m                selected[m
+[32m+[m[32m                  ? 'border-[#615FFF] bg-[#615FFF0D] outline-2 outline-[#615FFF33]'[m
+[32m+[m[32m                  : 'border-[#E5E7EB] bg-white hover:border-[#C7C6FF]'[m
+[32m+[m[32m              }`}[m
+[32m+[m[32m            >[m
+[32m+[m[32m              <p className="text-[14px] font-bold text-black">{option.label}</p>[m
+[32m+[m[32m              <p className="mt-0.5 text-[13px] leading-[19px] text-[#6A7282]">{option.sublabel}</p>[m
+[32m+[m[32m            </button>[m
+[32m+[m[32m          );[m
+[32m+[m[32m        })}[m
+[32m+[m[32m      </div>[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m
+   return ([m
+     <div className="mt-4 grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(168px, 1fr))' }}>[m
+[31m-      {step.options.map((option, index) => ([m
+[32m+[m[32m      {step.options?.map((option, index) => ([m
+         <CircuitChoiceTile[m
+           key={option.key}[m
+           kind={option.kind}[m
+[1mdiff --git a/frontend/src/design/mockSteps.ts b/frontend/src/design/mockSteps.ts[m
+[1mindex 16d36eb..72f0d74 100644[m
+[1m--- a/frontend/src/design/mockSteps.ts[m
+[1m+++ b/frontend/src/design/mockSteps.ts[m
+[36m@@ -255,35 +255,13 @@[m [mexport const profile1Steps: Step[] = [[m
+  */[m
+ export type ProfileId = '1' | '2' | '3' | '4';[m
+ [m
+[31m-// Profile 2 ("exploring"): 11 steps. Drops Profile 1's essential-node count,[m
+[31m-// while keeping the Vth setup, KCL, short-circuit, mesh, Isc, and Rth checks.[m
+[32m+[m[32m// Profile 2 ("exploring"): 11 steps. Drops Profile 1's model MCQ, ground-node,[m
+[32m+[m[32m// and essential-node steps; adds two method-picker MCQs (Vth method, Rth method).[m
+ export const profile2Steps: Step[] = [[m
+[31m-  {[m
+[31m-    kind: 'mcq',[m
+[31m-    number: 1,[m
+[31m-    prompt: 'Which circuit form is the Thevenin equivalent?',[m
+[31m-    helperText: 'Pick the source and resistor arrangement that matches the model.',[m
+[31m-    actionLabel: 'Confirm Selection',[m
+[31m-    options: [[m
+[31m-      { key: 'A', kind: 'voltage_series' },[m
+[31m-      { key: 'B', kind: 'current_series' },[m
+[31m-      { key: 'C', kind: 'current_parallel' },[m
+[31m-      { key: 'D', kind: 'voltage_parallel' },[m
+[31m-    ],[m
+[31m-    filled: { selectedIndex: 0 },[m
+[31m-    checked: {[m
+[31m-      selectedIndex: 0,[m
+[31m-      feedback: {[m
+[31m-        tone: 'success',[m
+[31m-        title: 'Correct',[m
+[31m-        body: 'The Thevenin model is a voltage source in series with a resistance.',[m
+[31m-      },[m
+[31m-    },[m
+[31m-  },[m
+   {[m
+     kind: 'multi_value',[m
+[31m-    number: 2,[m
+[31m-    prompt: 'What two values define the equivalent?',[m
+[32m+[m[32m    number: 1,[m
+[32m+[m[32m    prompt: 'Identify 2 values for Thevenin equivalent',[m
+     actionLabel: 'Check Solution',[m
+     inputs: [[m
+       { label: 'VALUE 1' },[m
+[36m@@ -294,50 +272,54 @@[m [mexport const profile2Steps: Step[] = [[m
+       values: ['Vth', 'Rth'],[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Right',[m
+[31m-        body: 'You need Vth and Rth to specify the Thevenin equivalent.',[m
+[32m+[m[32m        title: 'Excellent',[m
+[32m+[m[32m        body: 'For every Thevenin equivalent problem we need to find Vth and Rth',[m
+       },[m
+     },[m
+   },[m
+   {[m
+[31m-    kind: 'multi_value',[m
+[31m-    number: 3,[m
+[31m-    prompt: 'For Vth, what voltage are you solving for?',[m
+[31m-    helperText: 'Use terminal notation from the circuit.',[m
+[31m-    actionLabel: 'Check Solution',[m
+[31m-    inputs: [{ label: 'Vth =', placeholder: 'e.g. Vxy' }],[m
+[31m-    filled: { values: ['Vab'] },[m
+[32m+[m[32m    kind: 'select_in_diagram',[m
+[32m+[m[32m    number: 2,[m
+[32m+[m[32m    prompt: "Let's start from finding Vth.\nWhere is Vth in our diagram?",[m
+[32m+[m[32m    helperText: 'Select the Vth in the circuit diagram below.',[m
+[32m+[m[32m    actionLabel: 'Confirm Selection',[m
+[32m+[m[32m    filled: { overlay: 'highlight_terminals_ab' },[m
+     checked: {[m
+[31m-      values: ['Vab'],[m
+[32m+[m[32m      overlay: 'highlight_terminals_ab',[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Good',[m
+[31m-        body: 'Vth is the open-circuit terminal voltage Vab.',[m
+[32m+[m[32m        title: 'Excellent',[m
+[32m+[m[32m        body: 'Finding Vth is the same as finding Vab',[m
+       },[m
+     },[m
+   },[m
+   {[m
+[31m-    kind: 'select_in_diagram',[m
+[31m-    number: 4,[m
+[31m-    prompt: 'Choose a reference node for nodal analysis.',[m
+[31m-    helperText: 'Select the ground node you would use before writing KCL on the interactive circuit canvas.',[m
+[31m-    actionLabel: 'Confirm Selection',[m
+[31m-    canvasTask: 'ground_node',[m
+[31m-    filled: { overlay: 'highlight_node_va' },[m
+[32m+[m[32m    kind: 'mcq',[m
+[32m+[m[32m    number: 3,[m
+[32m+[m[32m    style: 'method',[m
+[32m+[m[32m    prompt: 'Select Your Method',[m
+[32m+[m[32m    helperText: 'Which analysis method will you use to find Vth?',[m
+[32m+[m[32m    actionLabel: 'Confirm Method',[m
+[32m+[m[32m    methodOptions: [[m
+[32m+[m[32m      { key: 'A', label: 'Nodal Analysis', sublabel: 'Apply KCL at nodes to find voltage' },[m
+[32m+[m[32m      { key: 'B', label: 'Mesh Analysis', sublabel: 'Apply KVL to mesh currents' },[m
+[32m+[m[32m      { key: 'C', label: 'Source Transformation', sublabel: 'Simplify circuit by converting sources' },[m
+[32m+[m[32m    ],[m
+[32m+[m[32m    filled: { selectedIndex: 0 },[m
+     checked: {[m
+[31m-      overlay: 'highlight_node_va',[m
+[32m+[m[32m      selectedIndex: 0,[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Nice choice',[m
+[31m-        body: 'Using the bottom rail as ground leaves Va and Vb as the node voltages.',[m
+[32m+[m[32m        title: 'Good',[m
+[32m+[m[32m        body: 'Nodal analysis is a solid choice for finding Vth.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+     kind: 'numeric_plain',[m
+[31m-    number: 5,[m
+[31m-    prompt: 'How many KCL equations are needed?',[m
+[31m-    fieldLabel: 'Number of equations:',[m
+[32m+[m[32m    number: 4,[m
+[32m+[m[32m    prompt: 'How many KCL equations do we need to solve for Vth',[m
+[32m+[m[32m    helperText: 'Enter the number of equations we need:',[m
+     actionLabel: 'Check Solution',[m
+     filled: { value: '2' },[m
+     checked: {[m
+[36m@@ -351,8 +333,8 @@[m [mexport const profile2Steps: Step[] = [[m
+   },[m
+   {[m
+     kind: 'labeled_equations',[m
+[31m-    number: 6,[m
+[31m-    prompt: 'Write the KCL equations for Va and Vb.',[m
+[32m+[m[32m    number: 5,[m
+[32m+[m[32m    prompt: 'Now set up your KCL equation at the highlighted node',[m
+     actionLabel: 'Check Solution',[m
+     prefix: 'KCL',[m
+     circuitOverlay: 'highlight_node_va',[m
+[36m@@ -362,16 +344,16 @@[m [mexport const profile2Steps: Step[] = [[m
+       equations: ['(VA-9)/20+(VA-VB)/60-1.8=0', '(VB-VA)/60+VB/25+VB/10=0'],[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Looks good',[m
+[31m-        body: 'Those two KCL equations capture the open-circuit node voltages.',[m
+[32m+[m[32m        title: 'Excellent',[m
+[32m+[m[32m        body: 'Both node equations look right — solve them simultaneously next.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+     kind: 'numeric_unit',[m
+[31m-    number: 7,[m
+[31m-    prompt: 'Solve the KCL system for Vth.',[m
+[31m-    helperText: 'Use Vth = Va - Vb.',[m
+[32m+[m[32m    number: 6,[m
+[32m+[m[32m    prompt: 'Great, now solve the previous three KCL equations and get your value for Vth.',[m
+[32m+[m[32m    helperText: 'Calculate the Vth (remember Vth = Va - Vb)',[m
+     fieldLabel: 'Value of Vth:',[m
+     leftLabel: 'Vth =',[m
+     unit: 'V',[m
+[36m@@ -382,30 +364,54 @@[m [mexport const profile2Steps: Step[] = [[m
+       value: '30',[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Correct',[m
+[31m-        body: 'Vth = 30 V from the open-circuit voltage across terminals a and b.',[m
+[32m+[m[32m        title: 'Excellent',[m
+[32m+[m[32m        body: 'Vth = 30 V — that matches the open-circuit voltage across terminals a–b.',[m
+[32m+[m[32m      },[m
+[32m+[m[32m    },[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    kind: 'mcq',[m
+[32m+[m[32m    number: 7,[m
+[32m+[m[32m    style: 'method',[m
+[32m+[m[32m    prompt: 'Nice! Now we need to find Rth using one of the following methods',[m
+[32m+[m[32m    helperText: 'Select your method:',[m
+[32m+[m[32m    actionLabel: 'Confirm Method',[m
+[32m+[m[32m    methodOptions: [[m
+[32m+[m[32m      { key: 'A', label: 'Use Isc (Short-circuit current)', sublabel: 'Find short-circuit current, then Rth = Vth / Isc' },[m
+[32m+[m[32m      { key: 'B', label: 'Dead-network analysis', sublabel: 'Deactivate all sources and find equivalent resistance' },[m
+[32m+[m[32m      { key: 'C', label: 'Source Transformation', sublabel: 'Simplify circuit by converting sources' },[m
+[32m+[m[32m    ],[m
+[32m+[m[32m    filled: { selectedIndex: 0 },[m
+[32m+[m[32m    checked: {[m
+[32m+[m[32m      selectedIndex: 0,[m
+[32m+[m[32m      feedback: {[m
+[32m+[m[32m        tone: 'success',[m
+[32m+[m[32m        title: 'Good',[m
+[32m+[m[32m        body: 'The Isc method pairs well with the Vth you already found.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+     kind: 'drawing_task',[m
+     number: 8,[m
+[31m-    prompt: 'Short a-b and label the mesh currents for Isc.',[m
+[31m-    helperText: 'Use the canvas to connect terminals a and b, then mark the loop currents.',[m
+[32m+[m[32m    prompt: 'Before we can find Rth, we need to find Isc.',[m
+[32m+[m[32m    helperText:[m
+[32m+[m[32m      'Using the sketchpad on the right, redraw the circuit diagram and label all mesh currents/node voltages needed to determine the short-circuit current.',[m
+     actionLabel: 'Check Drawing',[m
+[32m+[m[32m    canvasTask: 'short_mesh',[m
+     filled: {},[m
+     checked: {[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Ready',[m
+[31m-        body: 'The shorted circuit is set up for the short-circuit current calculation.',[m
+[32m+[m[32m        title: 'Nice sketch',[m
+[32m+[m[32m        body: 'Your relabeled diagram shows the three mesh loops needed for Isc.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+     kind: 'labeled_equations',[m
+     number: 9,[m
+[31m-    prompt: 'Write the mesh-current equations.',[m
+[32m+[m[32m    prompt: 'Now set up the mesh current equations for the circuit above',[m
+     actionLabel: 'Check Equations',[m
+     prefix: 'MESH',[m
+     circuitOverlay: 'mesh_loops',[m
+[36m@@ -425,17 +431,18 @@[m [mexport const profile2Steps: Step[] = [[m
+       ],[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Good equations',[m
+[31m-        body: 'The mesh equations are consistent; solve them to get the short-circuit current.',[m
+[32m+[m[32m        title: 'Great',[m
+[32m+[m[32m        body: 'All three mesh equations are valid — solve for I3 to get Isc.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+     kind: 'numeric_unit',[m
+     number: 10,[m
+[31m-    prompt: 'Enter the short-circuit current.',[m
+[31m-    helperText: 'Use the mesh current through the shorted terminals.',[m
+[31m-    fieldLabel: 'Value of Isc:',[m
+[32m+[m[32m    prompt: 'Great, now solve and enter your value for Isc.',[m
+[32m+[m[32m    helperText:[m
+[32m+[m[32m      "Calculate the short-circuit current. (Think about what's the relation of Isc and I1, I2, and I3)",[m
+[32m+[m[32m    fieldLabel: 'Final value of Isc:',[m
+     leftLabel: 'Isc =',[m
+     unit: 'A',[m
+     placeholder: '0.00',[m
+[36m@@ -445,18 +452,19 @@[m [mexport const profile2Steps: Step[] = [[m
+       value: '1.5',[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Correct',[m
+[31m-        body: 'Isc = 1.5 A through the short between terminals a and b.',[m
+[32m+[m[32m        title: 'Right',[m
+[32m+[m[32m        body: 'Isc = 1.5 A — exactly the current through the shorted terminals.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+     kind: 'priors_then_input',[m
+     number: 11,[m
+[31m-    prompt: 'Compute the equivalent resistance.',[m
+[31m-    helperText: 'Use the values you found for Vth and Isc.',[m
+[32m+[m[32m    prompt: 'Great, now solve and enter your value for Rth.',[m
+[32m+[m[32m    helperText:[m
+[32m+[m[32m      'Recall the values for Vth and Isc you got before then calculate the final equivalent resistance.',[m
+     priors: ['Vth = 30 V', 'Isc = 1.5 A'],[m
+[31m-    fieldLabel: 'Value of Rth:',[m
+[32m+[m[32m    fieldLabel: 'Final value of Rth:',[m
+     leftLabel: 'Rth =',[m
+     unit: 'Ω',[m
+     placeholder: '0.00',[m
+[36m@@ -466,98 +474,114 @@[m [mexport const profile2Steps: Step[] = [[m
+       value: '20',[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Complete',[m
+[31m-        body: 'Rth = Vth / Isc = 30 / 1.5 = 20 Ω.',[m
+[32m+[m[32m        title: 'Excellent',[m
+[32m+[m[32m        body: 'Rth = Vth / Isc = 30 / 1.5 = 20 Ω. The Thévenin equivalent is complete.',[m
+       },[m
+     },[m
+   },[m
+ ];[m
+ [m
+[31m-// Profile 3 ("distracted"): 6 steps. Merges the Vab, ground, KCL, and mesh[m
+[31m-// scaffolds into direct checkpoints for model, values, Vth, short setup, Isc, Rth.[m
+[32m+[m[32m// Profile 3 ("distracted"): 6 steps. Opens with a Vth-method picker, merges the[m
+[32m+[m[32m// KCL setup and Vth solve onto one screen, then an Rth-method picker, Isc, Rth.[m
+ export const profile3Steps: Step[] = [[m
+   {[m
+     kind: 'mcq',[m
+     number: 1,[m
+[31m-    prompt: 'Goal: pick the Thevenin model.',[m
+[31m-    helperText: 'Choose the equivalent circuit form.',[m
+[31m-    actionLabel: 'Confirm Selection',[m
+[31m-    options: [[m
+[31m-      { key: 'A', kind: 'voltage_series' },[m
+[31m-      { key: 'B', kind: 'current_series' },[m
+[31m-      { key: 'C', kind: 'current_parallel' },[m
+[31m-      { key: 'D', kind: 'voltage_parallel' },[m
+[32m+[m[32m    style: 'method',[m
+[32m+[m[32m    prompt: 'Select Your Method',[m
+[32m+[m[32m    helperText: 'Which analysis method will you use to find Vth?',[m
+[32m+[m[32m    actionLabel: 'Confirm Method',[m
+[32m+[m[32m    methodOptions: [[m
+[32m+[m[32m      { key: 'A', label: 'Nodal Analysis', sublabel: 'Apply KCL at nodes to find voltage' },[m
+[32m+[m[32m      { key: 'B', label: 'Mesh Analysis', sublabel: 'Apply KVL to mesh currents' },[m
+[32m+[m[32m      { key: 'C', label: 'Source Transformation', sublabel: 'Simplify circuit by converting sources' },[m
+     ],[m
+     filled: { selectedIndex: 0 },[m
+     checked: {[m
+       selectedIndex: 0,[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Yes',[m
+[31m-        body: 'The Thevenin equivalent is a voltage source in series with a resistance.',[m
+[32m+[m[32m        title: 'Excellent Choice!',[m
+[32m+[m[32m        body: 'Nodal Analysis is perfect here because of the common reference node.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+[31m-    kind: 'multi_value',[m
+[32m+[m[32m    kind: 'select_in_diagram',[m
+     number: 2,[m
+[31m-    prompt: 'Name the two target values.',[m
+[31m-    actionLabel: 'Check Solution',[m
+[31m-    inputs: [[m
+[31m-      { label: 'VALUE 1' },[m
+[31m-      { label: 'VALUE 2' },[m
+[31m-    ],[m
+[31m-    filled: { values: ['Vth', 'Rth'] },[m
+[32m+[m[32m    prompt: 'Set up your circuit and choose a reference / ground node.',[m
+[32m+[m[32m    helperText: 'Select a reference/ground node by clicking a node on the interactive circuit canvas.',[m
+[32m+[m[32m    actionLabel: 'Confirm Selection',[m
+[32m+[m[32m    canvasTask: 'ground_node',[m
+[32m+[m[32m    filled: { overlay: 'highlight_node_va' },[m
+     checked: {[m
+[31m-      values: ['Vth', 'Rth'],[m
+[32m+[m[32m      overlay: 'highlight_node_va',[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Right',[m
+[31m-        body: 'The target values are Vth and Rth.',[m
+[32m+[m[32m        title: 'Nice',[m
+[32m+[m[32m        body: 'Picking the bottom rail as ground simplifies the KCL equations.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+[31m-    kind: 'numeric_unit',[m
+[32m+[m[32m    kind: 'labeled_equations',[m
+     number: 3,[m
+[31m-    prompt: 'Find Vth.',[m
+[31m-    helperText: 'Use the open-circuit voltage at a-b.',[m
+[31m-    fieldLabel: 'Value of Vth:',[m
+[31m-    leftLabel: 'Vth =',[m
+[31m-    unit: 'V',[m
+[31m-    placeholder: '0.00',[m
+[32m+[m[32m    prompt: 'Now set up your KCL equations and enter your value for Vth.',[m
+[32m+[m[32m    helperText: 'Enter the correct KCL equations:',[m
+     actionLabel: 'Check Solution',[m
+[31m-    filled: { value: '30' },[m
+[32m+[m[32m    prefix: 'KCL',[m
+[32m+[m[32m    valueField: { fieldLabel: 'Final value of Vth:', leftLabel: 'Vth =', unit: 'V', placeholder: '0.00' },[m
+[32m+[m[32m    empty: { equations: ['', '', ''] },[m
+[32m+[m[32m    filled: {[m
+[32m+[m[32m      equations: [[m
+[32m+[m[32m        '(V1-9)/5+V1/25+1.8=0',[m
+[32m+[m[32m        '(Va-9)/20+(Va-Vb)/60-1.8=0',[m
+[32m+[m[32m        '(Vb-Va)/60+Vb/10=0',[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      value: '30',[m
+[32m+[m[32m    },[m
+     checked: {[m
+[32m+[m[32m      equations: [[m
+[32m+[m[32m        '(V1-9)/5+V1/25+1.8=0',[m
+[32m+[m[32m        '(Va-9)/20+(Va-Vb)/60-1.8=0',[m
+[32m+[m[32m        '(Vb-Va)/60+Vb/10=0',[m
+[32m+[m[32m      ],[m
+       value: '30',[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Correct',[m
+[31m-        body: 'Vth = 30 V.',[m
+[32m+[m[32m        title: 'Excellent Choice!',[m
+[32m+[m[32m        body: 'Nodal Analysis is perfect here because of the common reference node.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+[31m-    kind: 'drawing_task',[m
+[32m+[m[32m    kind: 'mcq',[m
+     number: 4,[m
+[31m-    prompt: 'Short a-b for Isc.',[m
+[31m-    helperText: 'Connect the terminals and label the loop currents.',[m
+[31m-    actionLabel: 'Check Drawing',[m
+[31m-    filled: {},[m
+[32m+[m[32m    style: 'method',[m
+[32m+[m[32m    prompt: 'Nice! Now we need to find Rth using one of the following methods',[m
+[32m+[m[32m    helperText: 'Select your method:',[m
+[32m+[m[32m    actionLabel: 'Confirm Method',[m
+[32m+[m[32m    methodOptions: [[m
+[32m+[m[32m      { key: 'A', label: 'Use Isc (Short-circuit current)', sublabel: 'Find short-circuit current, then Rth = Vth / Isc' },[m
+[32m+[m[32m      { key: 'B', label: 'Dead-network analysis', sublabel: 'Deactivate all sources and find equivalent resistance' },[m
+[32m+[m[32m      { key: 'C', label: 'Source Transformation', sublabel: 'Simplify circuit by converting sources' },[m
+[32m+[m[32m    ],[m
+[32m+[m[32m    filled: { selectedIndex: 0 },[m
+     checked: {[m
+[32m+[m[32m      selectedIndex: 0,[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Set',[m
+[31m-        body: 'The short-circuit setup is ready for Isc.',[m
+[32m+[m[32m        title: 'Excellent!',[m
+[32m+[m[32m        body: 'Using Isc is a reliable method to determine Rth when sources are active.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+     kind: 'numeric_unit',[m
+     number: 5,[m
+[31m-    prompt: 'Find Isc.',[m
+[31m-    helperText: 'Use the current through the shorted terminals.',[m
+[31m-    fieldLabel: 'Value of Isc:',[m
+[32m+[m[32m    prompt: 'To find Isc, connect terminals a and b with a wire.',[m
+[32m+[m[32m    helperText: 'This means: Va = Vb = Vab = 0. Write KCL at the merged node, then enter Isc.',[m
+[32m+[m[32m    fieldLabel: 'Final value of Isc:',[m
+     leftLabel: 'Isc =',[m
+     unit: 'A',[m
+     placeholder: '0.00',[m
+[36m@@ -567,18 +591,17 @@[m [mexport const profile3Steps: Step[] = [[m
+       value: '1.5',[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Correct',[m
+[31m-        body: 'Isc = 1.5 A.',[m
+[32m+[m[32m        title: 'Excellent!',[m
+[32m+[m[32m        body: 'Isc = 1.5 A — the short-circuit current through terminals a–b.',[m
+       },[m
+     },[m
+   },[m
+   {[m
+[31m-    kind: 'priors_then_input',[m
+[32m+[m[32m    kind: 'numeric_unit',[m
+     number: 6,[m
+[31m-    prompt: 'Find Rth.',[m
+[31m-    helperText: 'Use Rth = Vth / Isc.',[m
+[31m-    priors: ['Vth = 30 V', 'Isc = 1.5 A'],[m
+[31m-    fieldLabel: 'Value of Rth:',[m
+[32m+[m[32m    prompt: 'Great, now solve and enter your value for Rth.',[m
+[32m+[m[32m    helperText: 'Calculate the final equivalent resistance.',[m
+[32m+[m[32m    fieldLabel: 'Final value of Rth:',[m
+     leftLabel: 'Rth =',[m
+     unit: 'Ω',[m
+     placeholder: '0.00',[m
+[36m@@ -588,73 +611,33 @@[m [mexport const profile3Steps: Step[] = [[m
+       value: '20',[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Complete',[m
+[31m-        body: 'Rth = 30 / 1.5 = 20 Ω.',[m
+[32m+[m[32m        title: 'Excellent!',[m
+[32m+[m[32m        body: 'Rth = Vth / Isc = 30 / 1.5 = 20 Ω. The Thévenin equivalent is complete.',[m
+       },[m
+     },[m
+   },[m
+ ];[m
+ [m
+[31m-// Profile 4 ("independent"): 3 steps. Drops intermediate scaffolding and keeps[m
+[31m-// only the goal checkpoint plus direct Vth and Rth entries.[m
+[32m+[m[32m// Profile 4 ("independent"): 1 step. Drops all scaffolding — Vth and Rth are[m
+[32m+[m[32m// entered together on a single screen (the goal lives in the problem panel).[m
+ export const profile4Steps: Step[] = [[m
+   {[m
+[31m-    kind: 'multi_value',[m
+[32m+[m[32m    kind: 'dual_numeric_unit',[m
+     number: 1,[m
+[31m-    prompt: 'Goal: find the Thevenin equivalent at terminals a, b.',[m
+[31m-    helperText: 'Enter the two quantities that define it.',[m
+[32m+[m[32m    prompt: 'Solve the value for Vth and Rth.',[m
+[32m+[m[32m    helperText: 'Use a proper method to solve for Vth and Rth (think about removing the 60 Ω resistor).',[m
+     actionLabel: 'Check Solution',[m
+[31m-    inputs: [[m
+[31m-      { label: 'VALUE 1' },[m
+[31m-      { label: 'VALUE 2' },[m
+[32m+[m[32m    fields: [[m
+[32m+[m[32m      { fieldLabel: 'Find value of Vth:', leftLabel: 'Vth =', unit: 'V', placeholder: '0.00' },[m
+[32m+[m[32m      { fieldLabel: 'Find value of Rth:', leftLabel: 'Rth =', unit: 'Ω', placeholder: '0.00' },[m
+     ],[m
+[31m-    filled: { values: ['Vth', 'Rth'] },[m
+[32m+[m[32m    filled: { values: ['30', '20'] },[m
+     checked: {[m
+[31m-      values: ['Vth', 'Rth'],[m
+[32m+[m[32m      values: ['30', '20'],[m
+       feedback: {[m
+         tone: 'success',[m
+[31m-        title: 'Ready',[m
+[31m-        body: 'Find Vth and Rth for the equivalent.',[m
+[31m-      },[m
+[31m-    },[m
+[31m-  },[m
+[31m-  {[m
+[31m-    kind: 'numeric_unit',[m
+[31m-    number: 2,[m
+[31m-    prompt: 'Enter Vth.',[m
+[31m-    helperText: 'Open-circuit voltage at terminals a-b.',[m
+[31m-    fieldLabel: 'Value of Vth:',[m
+[31m-    leftLabel: 'Vth =',[m
+[31m-    unit: 'V',[m
+[31m-    placeholder: '0.00',[m
+[31m-    actionLabel: 'Check Solution',[m
+[31m-    filled: { value: '30' },[m
+[31m-    checked: {[m
+[31m-      value: '30',[m
+[31m-      feedback: {[m
+[31m-        tone: 'success',[m
+[31m-        title: 'Correct',[m
+[31m-        body: 'Vth = 30 V.',[m
+[31m-      },[m
+[31m-    },[m
+[31m-  },[m
+[31m-  {[m
+[31m-    kind: 'numeric_unit',[m
+[31m-    number: 3,[m
+[31m-    prompt: 'Enter Rth.',[m
+[31m-    helperText: 'Equivalent resistance at terminals a-b.',[m
+[31m-    fieldLabel: 'Value of Rth:',[m
+[31m-    leftLabel: 'Rth =',[m
+[31m-    unit: 'Ω',[m
+[31m-    placeholder: '0.00',[m
+[31m-    actionLabel: 'Check Solution',[m
+[31m-    filled: { value: '20' },[m
+[31m-    checked: {[m
+[31m-      value: '20',[m
+[31m-      feedback: {[m
+[31m-        tone: 'success',[m
+[31m-        title: 'Complete',[m
+[31m-        body: 'Rth = 20 Ω. The Thevenin equivalent is complete.',[m
+[32m+[m[32m        title: 'Excellent',[m
+[32m+[m[32m        body: 'Vth = 30 V and Rth = 20 Ω. The Thévenin equivalent is complete.',[m
+       },[m
+     },[m
+   },[m
+[1mdiff --git a/frontend/src/design/types.ts b/frontend/src/design/types.ts[m
+[1mindex 3a4e56d..508a4e2 100644[m
+[1m--- a/frontend/src/design/types.ts[m
+[1m+++ b/frontend/src/design/types.ts[m
+[36m@@ -32,6 +32,13 @@[m [mexport interface McqOption {[m
+   kind: CircuitOptionKind;[m
+ }[m
+ [m
+[32m+[m[32m/** Text-card MCQ option (method picker: Nodal / Mesh / Source Transformation, etc.). */[m
+[32m+[m[32mexport interface MethodOption {[m
+[32m+[m[32m  key: string;[m
+[32m+[m[32m  label: string;[m
+[32m+[m[32m  sublabel: string;[m
+[32m+[m[32m}[m
+[32m+[m
+ /** Highlight overlay drawn on top of the circuit diagram for a given step. */[m
+ export type CircuitOverlay =[m
+   | 'none'[m
+[36m@@ -49,12 +56,19 @@[m [mexport interface CommonStep {[m
+   canvasTask?: CanvasTask;[m
+ }[m
+ [m
+[31m-export interface McqStepDef extends CommonStep {[m
+[32m+[m[32m/**[m
+[32m+[m[32m * MCQ step. Two visual styles share the same `selectedIndex` answer shape:[m
+[32m+[m[32m *  - 'circuit' (default): 4 circuit-diagram tiles keyed by `options`.[m
+[32m+[m[32m *  - 'method': text cards (label + sublabel) keyed by `methodOptions`.[m
+[32m+[m[32m */[m
+[32m+[m[32mexport type McqStepDef = CommonStep & {[m
+   kind: 'mcq';[m
+[31m-  options: McqOption[];[m
+   filled: { selectedIndex: number };[m
+   checked: { selectedIndex: number; feedback: Feedback };[m
+[31m-}[m
+[32m+[m[32m} & ([m
+[32m+[m[32m  | { style?: 'circuit'; options: McqOption[]; methodOptions?: never }[m
+[32m+[m[32m  | { style: 'method'; methodOptions: MethodOption[]; options?: never }[m
+[32m+[m[32m);[m
+ [m
+ export interface MultiValueStepDef extends CommonStep {[m
+   kind: 'multi_value';[m
+[36m@@ -89,9 +103,11 @@[m [mexport interface NumericUnitStepDef extends CommonStep {[m
+ export interface LabeledEquationsStepDef extends CommonStep {[m
+   kind: 'labeled_equations';[m
+   prefix: string;[m
+[31m-  empty: { equations: string[] };[m
+[31m-  filled: { equations: string[] };[m
+[31m-  checked: { equations: string[]; feedback: Feedback };[m
+[32m+[m[32m  /** Optional trailing numeric field merged onto the same screen (e.g. P3: KCL + Vth). */[m
+[32m+[m[32m  valueField?: { fieldLabel: string; leftLabel: string; unit: string; placeholder?: string };[m
+[32m+[m[32m  empty: { equations: string[]; value?: string };[m
+[32m+[m[32m  filled: { equations: string[]; value?: string };[m
+[32m+[m[32m  checked: { equations: string[]; value?: string; feedback: Feedback };[m
+ }[m
+ [m
+ export interface DrawingTaskStepDef extends CommonStep {[m
+[36m@@ -111,6 +127,21 @@[m [mexport interface PriorsThenInputStepDef extends CommonStep {[m
+   checked: { value: string; feedback: Feedback };[m
+ }[m
+ [m
+[32m+[m[32mexport interface NumericField {[m
+[32m+[m[32m  fieldLabel: string;[m
+[32m+[m[32m  leftLabel: string;[m
+[32m+[m[32m  unit: string;[m
+[32m+[m[32m  placeholder?: string;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m/** Two number+unit fields on a single screen (e.g. Profile 4: Vth + Rth). */[m
+[32m+[m[32mexport interface DualNumericUnitStepDef extends CommonStep {[m
+[32m+[m[32m  kind: 'dual_numeric_unit';[m
+[32m+[m[32m  fields: NumericField[];[m
+[32m+[m[32m  filled: { values: string[] };[m
+[32m+[m[32m  checked: { values: string[]; feedback: Feedback };[m
+[32m+[m[32m}[m
+[32m+[m
+ export type Step =[m
+   | McqStepDef[m
+   | MultiValueStepDef[m
+[36m@@ -119,6 +150,7 @@[m [mexport type Step =[m
+   | NumericUnitStepDef[m
+   | LabeledEquationsStepDef[m
+   | DrawingTaskStepDef[m
+[31m-  | PriorsThenInputStepDef;[m
+[32m+[m[32m  | PriorsThenInputStepDef[m
+[32m+[m[32m  | DualNumericUnitStepDef;[m
+ [m
+ export type StepKind = Step['kind'];[m
+[1mdiff --git a/frontend/src/routes/DesignProblemRoute.tsx b/frontend/src/routes/DesignProblemRoute.tsx[m
+[1mindex bbab2e7..0368e32 100644[m
+[1m--- a/frontend/src/routes/DesignProblemRoute.tsx[m
+[1m+++ b/frontend/src/routes/DesignProblemRoute.tsx[m
+[36m@@ -24,7 +24,8 @@[m [mtype TextInputStep = Extract<[m
+       | 'numeric_plain'[m
+       | 'numeric_unit'[m
+       | 'labeled_equations'[m
+[31m-      | 'priors_then_input';[m
+[32m+[m[32m      | 'priors_then_input'[m
+[32m+[m[32m      | 'dual_numeric_unit';[m
+   }[m
+ >;[m
+ [m
+[36m@@ -270,6 +271,7 @@[m [mfunction isTextInputStep(step: Step): step is TextInputStep {[m
+     'numeric_unit',[m
+     'labeled_equations',[m
+     'priors_then_input',[m
+[32m+[m[32m    'dual_numeric_unit',[m
+   ].includes(step.kind);[m
+ }[m
+ [m
+[36m@@ -282,7 +284,11 @@[m [mfunction expectedTextAnswers(step: TextInputStep): string[] {[m
+     case 'multi_value':[m
+       return step.checked.values;[m
+     case 'labeled_equations':[m
+[31m-      return step.checked.equations;[m
+[32m+[m[32m      return step.valueField && step.checked.value != null[m
+[32m+[m[32m        ? [...step.checked.equations, step.checked.value][m
+[32m+[m[32m        : step.checked.equations;[m
+[32m+[m[32m    case 'dual_numeric_unit':[m
+[32m+[m[32m      return step.checked.values;[m
+     case 'numeric_plain':[m
+     case 'numeric_unit':[m
+     case 'priors_then_input':[m
+[36m@@ -300,22 +306,33 @@[m [mfunction textAnswersAreCorrect(step: TextInputStep, values: string[]) {[m
+       return step.checked.values.every((expected, index) => ([m
+         normalizeText(values[index]) === normalizeText(expected)[m
+       ));[m
+[31m-    case 'labeled_equations':[m
+[31m-      return step.checked.equations.every((expected, index) => ([m
+[32m+[m[32m    case 'labeled_equations': {[m
+[32m+[m[32m      const equationsMatch = step.checked.equations.every((expected, index) => ([m
+         normalizeEquation(values[index]) === normalizeEquation(expected)[m
+       ));[m
+[32m+[m[32m      if (!step.valueField || step.checked.value == null) return equationsMatch;[m
+[32m+[m[32m      return equationsMatch[m
+[32m+[m[32m        && numericAnswersMatch(values[step.checked.equations.length], step.checked.value);[m
+[32m+[m[32m    }[m
+[32m+[m[32m    case 'dual_numeric_unit':[m
+[32m+[m[32m      return step.checked.values.every((expected, index) => ([m
+[32m+[m[32m        numericAnswersMatch(values[index], expected)[m
+[32m+[m[32m      ));[m
+     case 'numeric_plain':[m
+     case 'numeric_unit':[m
+[31m-    case 'priors_then_input': {[m
+[31m-      const submitted = Number(values[0]);[m
+[31m-      const expected = Number(step.checked.value);[m
+[31m-      return Number.isFinite(submitted)[m
+[31m-        && Number.isFinite(expected)[m
+[31m-        && Math.abs(submitted - expected) < 1e-9;[m
+[31m-    }[m
+[32m+[m[32m    case 'priors_then_input':[m
+[32m+[m[32m      return numericAnswersMatch(values[0], step.checked.value);[m
+   }[m
+ }[m
+ [m
+[32m+[m[32mfunction numericAnswersMatch(submittedStr: string | undefined, expectedStr: string) {[m
+[32m+[m[32m  const submitted = Number(submittedStr);[m
+[32m+[m[32m  const expected = Number(expectedStr);[m
+[32m+[m[32m  return Number.isFinite(submitted)[m
+[32m+[m[32m    && Number.isFinite(expected)[m
+[32m+[m[32m    && Math.abs(submitted - expected) < 1e-9;[m
+[32m+[m[32m}[m
+[32m+[m
+ function normalizeText(value: string | undefined) {[m
+   return (value ?? '').trim().replace(/\s+/g, ' ').replace(/_/g, '').toLowerCase();[m
+ }[m
+
+                   SSUUMMMMAARRYY OOFF LLEESSSS CCOOMMMMAANNDDSS
+
+      Commands marked with * may be preceded by a number, _N.
+      Notes in parentheses indicate the behavior if _N is given.
+      A key preceded by a caret indicates the Ctrl key; thus ^K is ctrl-K.
+
+  h  H                 Display this help.
+  q  :q  Q  :Q  ZZ     Exit.
+ ---------------------------------------------------------------------------
+
+                           MMOOVVIINNGG
+
+  e  ^E  j  ^N  CR  *  Forward  one line   (or _N lines).
+  y  ^Y  k  ^K  ^P  *  Backward one line   (or _N lines).
+  ESC-j             *  Forward  one file line (or _N file lines).
+  ESC-k             *  Backward one file line (or _N file lines).
+  f  ^F  ^V  SPACE  *  Forward  one window (or _N lines).
+  b  ^B  ESC-v      *  Backward one window (or _N lines).
+  z                 *  Forward  one window (and set window to _N).
+  w                 *  Backward one window (and set window to _N).
+  ESC-SPACE         *  Forward  one window, but don't stop at end-of-file.
+  ESC-b             *  Backward one window, but don't stop at beginning-of-file.
+  d  ^D             *  Forward  one half-window (and set half-window to _N).
+  u  ^U             *  Backward one half-window (and set half-window to _N).
+  ESC-)  RightArrow *  Right one half screen width (or _N positions).
+  ESC-(  LeftArrow  *  Left  one half screen width (or _N positions).
+  ESC-}  ^RightArrow   Right to last column displayed.
+  ESC-{  ^LeftArrow    Left  to first column.
+  F                    Forward forever; like "tail -f".
+  ESC-F                Like F but stop when search pattern is found.
+  r  ^R  ^L            Repaint screen.
+  R                    Repaint screen, discarding buffered input.
+        ---------------------------------------------------
+        Default "window" is the screen height.
+        Default "half-window" is half of the screen height.
+ ---------------------------------------------------------------------------
+
+                          SSEEAARRCCHHIINNGG
+
+  /_p_a_t_t_e_r_n          *  Search forward for (_N-th) matching line.
+  ?_p_a_t_t_e_r_n          *  Search backward for (_N-th) matching line.
+  n                 *  Repeat previous search (for _N-th occurrence).
+  N                 *  Repeat previous search in reverse direction.
+  ESC-n             *  Repeat previous search, spanning files.
+  ESC-N             *  Repeat previous search, reverse dir. & spanning files.
+  ^O^N  ^On         *  Search forward for (_N-th) OSC8 hyperlink.
+  ^O^P  ^Op         *  Search backward for (_N-th) OSC8 hyperlink.
+  ^O^L  ^Ol            Jump to the currently selected OSC8 hyperlink.
+  ESC-u                Undo (toggle) search highlighting.
+  ESC-U                Clear search highlighting.
+  &_p_a_t_t_e_r_n          *  Display only matching lines.
+        ---------------------------------------------------
+		Search is case-sensitive unless changed with -i or -I.
+        A search pattern may begin with one or more of:
+        ^N or !  Search for NON-matching lines.
+        ^E or *  Search multiple files (pass thru END OF FILE).
+        ^F or @  Start search at FIRST file (for /) or last file (for ?).
+        ^K       Highlight matches, but don't move (KEEP position).
+        ^R       Don't use REGULAR EXPRESSIONS.
+        ^S _n     Search for match in _n-th parenthesized subpattern.
+        ^W       WRAP search if no match found.
+        ^L       Enter next character literally into pattern.
+ ---------------------------------------------------------------------------
+
+                           JJUUMMPPIINNGG
+
+  g  <  ESC-<       *  Go to first line in file (or line _N).
+  G  >  ESC->       *  Go to last line in file (or line _N).
+  p  %              *  Go to beginning of file (or _N percent into file).
+  t                 *  Go to the (_N-th) next tag.
+  T                 *  Go to the (_N-th) previous tag.
+  {  (  [           *  Find close bracket } ) ].
+  }  )  ]           *  Find open bracket { ( [.
+  ESC-^F _<_c_1_> _<_c_2_>  *  Find close bracket _<_c_2_>.
+  ESC-^B _<_c_1_> _<_c_2_>  *  Find open bracket _<_c_1_>.
+        ---------------------------------------------------
+        Each "find close bracket" command goes forward to the close bracket 
+          matching the (_N-th) open bracket in the top line.
+        Each "find open bracket" command goes backward to the open bracket 
+          matching the (_N-th) close bracket in the bottom line.
+
+  m_<_l_e_t_t_e_r_>            Mark the current top line with <letter>.
+  M_<_l_e_t_t_e_r_>            Mark the current bottom line with <letter>.
+  '_<_l_e_t_t_e_r_>            Go to a previously marked position.
+  ''                   Go to the previous position.
+  ^X^X                 Same as '.
+  ESC-m_<_l_e_t_t_e_r_>        Clear a mark.
+        ---------------------------------------------------
+        A mark is any upper-case or lower-case letter.
+        Certain marks are predefined:
+             ^  means  beginning of the file
+             $  means  end of the file
+ ---------------------------------------------------------------------------
+
+                        CCHHAANNGGIINNGG FFIILLEESS
+
+  :e [_f_i_l_e]            Examine a new file.
+  ^X^V                 Same as :e.
+  :n                *  Examine the (_N-th) next file from the command line.
+  :p                *  Examine the (_N-th) previous file from the command line.
+  :x                *  Examine the first (or _N-th) file from the command line.
+  ^O^O                 Open the currently selected OSC8 hyperlink.
+  :d                   Delete the current file from the command line list.
+  =  ^G  :f            Print current file name.
+ ---------------------------------------------------------------------------
+
+                    MMIISSCCEELLLLAANNEEOOUUSS CCOOMMMMAANNDDSS
+
+  -_<_f_l_a_g_>              Toggle a command line option [see OPTIONS below].
+  --_<_n_a_m_e_>             Toggle a command line option, by name.
+  __<_f_l_a_g_>              Display the setting of a command line option.
+  ___<_n_a_m_e_>             Display the setting of an option, by name.
+  +_c_m_d                 Execute the less cmd each time a new file is examined.
+
+  !_c_o_m_m_a_n_d             Execute the shell command with $SHELL.
+  #_c_o_m_m_a_n_d             Execute the shell command, expanded like a prompt.
+  |XX_c_o_m_m_a_n_d            Pipe file between current pos & mark XX to shell command.
+  s _f_i_l_e               Save input to a file.
+  v                    Edit the current file with $VISUAL or $EDITOR.
+  V                    Print version number of "less".
+ ---------------------------------------------------------------------------
+
+                           OOPPTTIIOONNSS
+
+        Most options may be changed either on the command line,
+        or from within less by using the - or -- command.
+        Options may be given in one of two forms: either a single
+        character preceded by a -, or a name preceded by --.
+
+  -?  ........  --help
+                  Display help (from command line).
+  -a  ........  --search-skip-screen
+                  Search skips current screen.
+  -A  ........  --SEARCH-SKIP-SCREEN
+                  Search starts just after target line.
+  -b [_N]  ....  --buffers=[_N]
+                  Number of buffers.
+  -B  ........  --auto-buffers
+                  Don't automatically allocate buffers for pipes.
+  -c  ........  --clear-screen
+                  Repaint by clearing rather than scrolling.
+  -d  ........  --dumb
+                  Dumb terminal.
+  -D xx_c_o_l_o_r  .  --color=xx_c_o_l_o_r
+                  Set screen colors.
+  -e  -E  ....  --quit-at-eof  --QUIT-AT-EOF
+                  Quit at end of file.
+  -f  ........  --force
+                  Force open non-regular files.
+  -F  ........  --quit-if-one-screen
+                  Quit if entire file fits on first screen.
+  -g  ........  --hilite-search
+                  Highlight only last match for searches.
+  -G  ........  --HILITE-SEARCH
+                  Don't highlight any matches for searches.
+  -h [_N]  ....  --max-back-scroll=[_N]
+                  Backward scroll limit.
+  -i  ........  --ignore-case
+                  Ignore case in searches that do not contain uppercase.
+  -I  ........  --IGNORE-CASE
+                  Ignore case in all searches.
+  -j [_N]  ....  --jump-target=[_N]
+                  Screen position of target lines.
+  -J  ........  --status-column
+                  Display a status column at left edge of screen.
+  -k _f_i_l_e  ...  --lesskey-file=_f_i_l_e
+                  Use a compiled lesskey file.
+  -K  ........  --quit-on-intr
+                  Exit less in response to ctrl-C.
+  -L  ........  --no-lessopen
+                  Ignore the LESSOPEN environment variable.
+  -m  -M  ....  --long-prompt  --LONG-PROMPT
+                  Set prompt style.
+  -n .........  --line-numbers
+                  Suppress line numbers in prompts and messages.
+  -N .........  --LINE-NUMBERS
+                  Display line number at start of each line.
+  -o [_f_i_l_e] ..  --log-file=[_f_i_l_e]
+                  Copy to log file (standard input only).
+  -O [_f_i_l_e] ..  --LOG-FILE=[_f_i_l_e]
+                  Copy to log file (unconditionally overwrite).
+  -p _p_a_t_t_e_r_n .  --pattern=[_p_a_t_t_e_r_n]
+                  Start at pattern (from command line).
+  -P [_p_r_o_m_p_t]   --prompt=[_p_r_o_m_p_t]
+                  Define new prompt.
+  -q  -Q  ....  --quiet  --QUIET  --silent --SILENT
+                  Quiet the terminal bell.
+  -r  -R  ....  --raw-control-chars  --RAW-CONTROL-CHARS
+                  Output "raw" control characters.
+  -s  ........  --squeeze-blank-lines
+                  Squeeze multiple blank lines.
+  -S  ........  --chop-long-lines
+                  Chop (truncate) long lines rather than wrapping.
+  -t _t_a_g  ....  --tag=[_t_a_g]
+                  Find a tag.
+  -T [_t_a_g_s_f_i_l_e] --tag-file=[_t_a_g_s_f_i_l_e]
+                  Use an alternate tags file.
+  -u  -U  ....  --underline-special  --UNDERLINE-SPECIAL
+                  Change handling of backspaces, tabs and carriage returns.
+  -V  ........  --version
+                  Display the version number of "less".
+  -w  ........  --hilite-unread
+                  Highlight first new line after forward-screen.
+  -W  ........  --HILITE-UNREAD
+                  Highlight first new line after any forward movement.
+  -x [_N[,...]]  --tabs=[_N[,...]]
+                  Set tab stops.
+  -X  ........  --no-init
+                  Don't use termcap init/deinit strings.
+  -y [_N]  ....  --max-forw-scroll=[_N]
+                  Forward scroll limit.
+  -z [_N]  ....  --window=[_N]
+                  Set size of window.
+  -" [_c[_c]]  .  --quotes=[_c[_c]]
+                  Set shell quote characters.
+  -~  ........  --tilde
+                  Don't display tildes after end of file.
+  -# [_N]  ....  --shift=[_N]
+                  Set horizontal scroll amount (0 = one half screen width).
+
+                --exit-follow-on-close
+                  Exit F command on a pipe when writer closes pipe.
+                --file-size
+                  Automatically determine the size of the input file.
+                --follow-name
+                  The F command changes files if the input file is renamed.
+                --form-feed
+                  Stop scrolling when a form feed character is reached.
+                --header=[_L[,_C[,_N]]]
+                  Use _L lines (starting at line _N) and _C columns as headers.
+                --incsearch
+                  Search file as each pattern character is typed in.
+                --intr=[_C]
+                  Use _C instead of ^X to interrupt a read.
+                --lesskey-context=_t_e_x_t
+                  Use lesskey source file contents.
+                --lesskey-src=_f_i_l_e
+                  Use a lesskey source file.
+                --line-num-width=[_N]
+                  Set the width of the -N line number field to _N characters.
+                --match-shift=[_N]
+                  Show at least _N characters to the left of a search match.
+                --modelines=[_N]
+                  Read _N lines from the input file and look for vim modelines.
+                --mouse
+                  Enable mouse input.
+                --no-edit-warn
+                  Don't warn when using v command on a file opened via LESSOPEN.
+                --no-keypad
+                  Don't send termcap keypad init/deinit strings.
+                --no-histdups
+                  Remove duplicates from command history.
+                --no-number-headers
+                  Don't give line numbers to header lines.
+                --no-paste
+                  Ignore pasted input.
+                --no-search-header-lines
+                  Searches do not include header lines.
+                --no-search-header-columns
+                  Searches do not include header columns.
+                --no-search-headers
+                  Searches do not include header lines or columns.
+                --no-vbell
+                  Disable the terminal's visual bell.
+                --redraw-on-quit
+                  Redraw final screen when quitting.
+                --rscroll=[_C]
+                  Set the character used to mark truncated lines.
+                --save-marks
+                  Retain marks across invocations of less.
+                --search-options=[EFKNRW-]
+                  Set default options for every search.
+                --show-preproc-errors
+                  Display a message if preprocessor exits with an error status.
+                --proc-backspace
+                  Process backspaces for bold/underline.
+                --PROC-BACKSPACE
+                  Treat backspaces as control characters.
+                --proc-return
+                  Delete carriage returns before newline.
+                --PROC-RETURN
+                  Treat carriage returns as control characters.
+                --proc-tab
+                  Expand tabs to spaces.
+                --PROC-TAB
+                  Treat tabs as control characters.
+                --status-col-width=[_N]
+                  Set the width of the -J status column to _N characters.
+                --status-line
+                  Highlight or color the entire line containing a mark.
+                --use-backslash
+                  Subsequent options use backslash as escape char.
+                --use-color
+                  Enables colored text.
+                --wheel-lines=[_N]
+                  Each click of the mouse wheel moves _N lines.
+                --wordwrap
+                  Wrap lines at spaces.
+
+
+ ---------------------------------------------------------------------------
+
+                          LLIINNEE EEDDIITTIINNGG
+
+        These keys can be used to edit text being entered 
+        on the "command line" at the bottom of the screen.
+
+ RightArrow ..................... ESC-l ... Move cursor right one character.
+ LeftArrow ...................... ESC-h ... Move cursor left one character.
+ ctrl-RightArrow  ESC-RightArrow  ESC-w ... Move cursor right one word.
+ ctrl-LeftArrow   ESC-LeftArrow   ESC-b ... Move cursor left one word.
+ HOME ........................... ESC-0 ... Move cursor to start of line.
+ END ............................ ESC-$ ... Move cursor to end of line.
+ BACKSPACE ................................ Delete char to left of cursor.
+ DELETE ......................... ESC-x ... Delete char under cursor.
+ ctrl-BACKSPACE   ESC-BACKSPACE ........... Delete word to left of cursor.
+ ctrl-DELETE .... ESC-DELETE .... ESC-X ... Delete word under cursor.
+ ctrl-U ......... ESC (MS-DOS only) ....... Delete entire line.
+ UpArrow ........................ ESC-k ... Retrieve previous command line.
+ DownArrow ...................... ESC-j ... Retrieve next command line.
+ TAB ...................................... Complete filename & cycle.
+ SHIFT-TAB ...................... ESC-TAB   Complete filename & reverse cycle.
+ ctrl-L ................................... Complete filename, list all.

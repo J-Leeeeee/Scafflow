@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
 import katex from 'katex';
 import { plainMathToTex } from '../lib/math-preview';
 
 interface MathAnswerInputProps {
   value: string;
   onChange: (value: string) => void;
-  label?: string;
+  label?: ReactNode;
   placeholder?: string;
   multiline?: boolean;
   displayMode?: boolean;

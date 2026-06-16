@@ -10,6 +10,10 @@ import type { Step } from './types';
  * backend, the `filled` and `checked` blocks become server-returned data;
  * the `prompt`, `helperText`, and structural fields become part of the
  * scaffold definition.
+ *
+ * Display copy may contain inline LaTeX wrapped in `$...$` (rendered by
+ * <MathText>); answer/grading fields (`filled`/`checked` values + equations)
+ * stay plain ASCII so the matching logic is unchanged.
  */
 
 export const profile1Steps: Step[] = [
@@ -50,32 +54,32 @@ export const profile1Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent',
-        body: 'For every Thevenin equivalent problem we need to find Vth and Rth',
+        body: 'For every Thevenin equivalent problem we need to find $V_{\\mathrm{th}}$ and $R_{\\mathrm{th}}$',
       },
     },
   },
   {
     kind: 'multi_value',
     number: 3,
-    prompt: "Let's start from finding Vth.\nWhere is Vth in our diagram?",
+    prompt: "Let's start from finding $V_{\\mathrm{th}}$.\nWhere is $V_{\\mathrm{th}}$ in our diagram?",
     helperText:
-      'Enter the voltage (in terms of its terminals) that corresponds to Vth in the circuit diagram above.',
+      'Enter the voltage (in terms of its terminals) that corresponds to $V_{\\mathrm{th}}$ in the circuit diagram above.',
     actionLabel: 'Check Solution',
-    inputs: [{ label: 'Vth =', placeholder: 'e.g. Vxy' }],
+    inputs: [{ label: '$V_{\\mathrm{th}} =$', placeholder: 'e.g. Vxy' }],
     filled: { values: ['Vab'] },
     checked: {
       values: ['Vab'],
       feedback: {
         tone: 'success',
         title: 'Good',
-        body: 'Vth is the open-circuit voltage measured between terminals a and b — Vab.',
+        body: '$V_{\\mathrm{th}}$ is the open-circuit voltage measured between terminals a and b — $V_{ab}$.',
       },
     },
   },
   {
     kind: 'select_in_diagram',
     number: 4,
-    prompt: 'Use Nodal Analysis to find Vth. Choose a ground node.',
+    prompt: 'Use Nodal Analysis to find $V_{\\mathrm{th}}$. Choose a ground node.',
     helperText: 'Select a reference/ground node by clicking on a node on the circuit below.',
     actionLabel: 'Confirm Selection',
     canvasTask: 'ground_node',
@@ -102,14 +106,14 @@ export const profile1Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Correct',
-        body: 'There are 3 essential nodes — Va, Vb, and ground.',
+        body: 'There are 3 essential nodes — $V_a$, $V_b$, and ground.',
       },
     },
   },
   {
     kind: 'numeric_plain',
     number: 6,
-    prompt: 'How many KCL equations do we need to solve for Vth',
+    prompt: 'How many KCL equations do we need to solve for $V_{\\mathrm{th}}$',
     fieldLabel: 'Enter the number of equations we need:',
     actionLabel: 'Check Solution',
     filled: { value: '2' },
@@ -143,10 +147,10 @@ export const profile1Steps: Step[] = [
   {
     kind: 'numeric_unit',
     number: 8,
-    prompt: 'Great, now solve the previous three KCL equations and get your value for Vth.',
-    helperText: 'Calculate the Vth(remember Vth = Va - Vb)',
-    fieldLabel: 'Value of Vth:',
-    leftLabel: 'Vth =',
+    prompt: 'Great, now solve the previous three KCL equations and get your value for $V_{\\mathrm{th}}$.',
+    helperText: 'Calculate the $V_{\\mathrm{th}}$ (remember $V_{\\mathrm{th}} = V_a - V_b$)',
+    fieldLabel: 'Value of $V_{\\mathrm{th}}$:',
+    leftLabel: '$V_{\\mathrm{th}} =$',
     unit: 'V',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
@@ -156,14 +160,14 @@ export const profile1Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent',
-        body: 'Vth = 30 V — that matches the open-circuit voltage across terminals a–b.',
+        body: '$V_{\\mathrm{th}} = 30\\,\\mathrm{V}$ — that matches the open-circuit voltage across terminals a–b.',
       },
     },
   },
   {
     kind: 'drawing_task',
     number: 9,
-    prompt: 'Before we can find Rth, we need to find Isc.',
+    prompt: 'Before we can find $R_{\\mathrm{th}}$, we need to find $I_{\\mathrm{sc}}$.',
     helperText:
       'Using the interactive canvas on the right, short terminals a and b, then label all mesh currents needed to determine the short-circuit current.',
     actionLabel: 'Check Drawing',
@@ -173,7 +177,7 @@ export const profile1Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Nice sketch',
-        body: 'Your relabeled diagram shows the three mesh loops needed for Isc.',
+        body: 'Your relabeled diagram shows the three mesh loops needed for $I_{\\mathrm{sc}}$.',
       },
     },
   },
@@ -201,18 +205,18 @@ export const profile1Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Great',
-        body: 'All three mesh equations are valid — solve for I3 to get Isc.',
+        body: 'All three mesh equations are valid — solve for $I_3$ to get $I_{\\mathrm{sc}}$.',
       },
     },
   },
   {
     kind: 'numeric_unit',
     number: 11,
-    prompt: 'Great, now solve and enter your value for Isc.',
+    prompt: 'Great, now solve and enter your value for $I_{\\mathrm{sc}}$.',
     helperText:
-      "Calculate the short-circuit current.(Think about what's the relation of Isc and I1, I2, and I3)",
-    fieldLabel: 'Final value of Isc:',
-    leftLabel: 'Isc =',
+      "Calculate the short-circuit current.(Think about what's the relation of $I_{\\mathrm{sc}}$ and $I_1$, $I_2$, and $I_3$)",
+    fieldLabel: 'Final value of $I_{\\mathrm{sc}}$:',
+    leftLabel: '$I_{\\mathrm{sc}} =$',
     unit: 'A',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
@@ -222,19 +226,19 @@ export const profile1Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Right',
-        body: 'Isc = 1.5 A — exactly the current through the shorted terminals.',
+        body: '$I_{\\mathrm{sc}} = 1.5\\,\\mathrm{A}$ — exactly the current through the shorted terminals.',
       },
     },
   },
   {
     kind: 'priors_then_input',
     number: 12,
-    prompt: 'Great, now solve and enter your value for Rth.',
+    prompt: 'Great, now solve and enter your value for $R_{\\mathrm{th}}$.',
     helperText:
-      'Recall the values for Vth and Isc you got before then calculate the final equivalent resistance.',
-    priors: ['Vth = 30 V', 'Isc = 1.5 A'],
-    fieldLabel: 'Final value of Rth:',
-    leftLabel: 'Rth =',
+      'Recall the values for $V_{\\mathrm{th}}$ and $I_{\\mathrm{sc}}$ you got before then calculate the final equivalent resistance.',
+    priors: ['$V_{\\mathrm{th}} = 30\\,\\mathrm{V}$', '$I_{\\mathrm{sc}} = 1.5\\,\\mathrm{A}$'],
+    fieldLabel: 'Final value of $R_{\\mathrm{th}}$:',
+    leftLabel: '$R_{\\mathrm{th}} =$',
     unit: 'Ω',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
@@ -244,7 +248,7 @@ export const profile1Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent',
-        body: 'Rth = Vth / Isc = 30 / 1.5 = 20 Ω. The Thévenin equivalent is complete.',
+        body: '$R_{\\mathrm{th}} = V_{\\mathrm{th}} / I_{\\mathrm{sc}} = 30 / 1.5 = 20\\,\\Omega$. The Thévenin equivalent is complete.',
       },
     },
   },
@@ -273,23 +277,25 @@ export const profile2Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent',
-        body: 'For every Thevenin equivalent problem we need to find Vth and Rth',
+        body: 'For every Thevenin equivalent problem we need to find $V_{\\mathrm{th}}$ and $R_{\\mathrm{th}}$',
       },
     },
   },
   {
-    kind: 'select_in_diagram',
+    kind: 'multi_value',
     number: 2,
-    prompt: "Let's start from finding Vth.\nWhere is Vth in our diagram?",
-    helperText: 'Select the Vth in the circuit diagram below.',
-    actionLabel: 'Confirm Selection',
-    filled: { overlay: 'highlight_terminals_ab' },
+    prompt: "Let's start from finding $V_{\\mathrm{th}}$.\nWhere is $V_{\\mathrm{th}}$ in our diagram?",
+    helperText:
+      'Enter the voltage (in terms of its terminals) that corresponds to $V_{\\mathrm{th}}$ in the circuit diagram above.',
+    actionLabel: 'Check Solution',
+    inputs: [{ label: '$V_{\\mathrm{th}} =$', placeholder: 'e.g. Vxy' }],
+    filled: { values: ['Vab'] },
     checked: {
-      overlay: 'highlight_terminals_ab',
+      values: ['Vab'],
       feedback: {
         tone: 'success',
-        title: 'Excellent',
-        body: 'Finding Vth is the same as finding Vab',
+        title: 'Good',
+        body: '$V_{\\mathrm{th}}$ is the open-circuit voltage measured between terminals a and b — $V_{ab}$.',
       },
     },
   },
@@ -298,7 +304,7 @@ export const profile2Steps: Step[] = [
     number: 3,
     style: 'method',
     prompt: 'Select Your Method',
-    helperText: 'Which analysis method will you use to find Vth?',
+    helperText: 'Which analysis method will you use to find $V_{\\mathrm{th}}$?',
     actionLabel: 'Confirm Method',
     methodOptions: [
       { key: 'A', label: 'Nodal Analysis', sublabel: 'Apply KCL at nodes to find voltage' },
@@ -311,14 +317,14 @@ export const profile2Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Good',
-        body: 'Nodal analysis is a solid choice for finding Vth.',
+        body: 'Nodal analysis is a solid choice for finding $V_{\\mathrm{th}}$.',
       },
     },
   },
   {
     kind: 'numeric_plain',
     number: 4,
-    prompt: 'How many KCL equations do we need to solve for Vth',
+    prompt: 'How many KCL equations do we need to solve for $V_{\\mathrm{th}}$',
     helperText: 'Enter the number of equations we need:',
     actionLabel: 'Check Solution',
     filled: { value: '2' },
@@ -352,10 +358,10 @@ export const profile2Steps: Step[] = [
   {
     kind: 'numeric_unit',
     number: 6,
-    prompt: 'Great, now solve the previous three KCL equations and get your value for Vth.',
-    helperText: 'Calculate the Vth (remember Vth = Va - Vb)',
-    fieldLabel: 'Value of Vth:',
-    leftLabel: 'Vth =',
+    prompt: 'Great, now solve the previous three KCL equations and get your value for $V_{\\mathrm{th}}$.',
+    helperText: 'Calculate the $V_{\\mathrm{th}}$ (remember $V_{\\mathrm{th}} = V_a - V_b$)',
+    fieldLabel: 'Value of $V_{\\mathrm{th}}$:',
+    leftLabel: '$V_{\\mathrm{th}} =$',
     unit: 'V',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
@@ -365,7 +371,7 @@ export const profile2Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent',
-        body: 'Vth = 30 V — that matches the open-circuit voltage across terminals a–b.',
+        body: '$V_{\\mathrm{th}} = 30\\,\\mathrm{V}$ — that matches the open-circuit voltage across terminals a–b.',
       },
     },
   },
@@ -373,11 +379,11 @@ export const profile2Steps: Step[] = [
     kind: 'mcq',
     number: 7,
     style: 'method',
-    prompt: 'Nice! Now we need to find Rth using one of the following methods',
+    prompt: 'Nice! Now we need to find $R_{\\mathrm{th}}$ using one of the following methods',
     helperText: 'Select your method:',
     actionLabel: 'Confirm Method',
     methodOptions: [
-      { key: 'A', label: 'Use Isc (Short-circuit current)', sublabel: 'Find short-circuit current, then Rth = Vth / Isc' },
+      { key: 'A', label: 'Use $I_{\\mathrm{sc}}$ (Short-circuit current)', sublabel: 'Find short-circuit current, then $R_{\\mathrm{th}} = V_{\\mathrm{th}} / I_{\\mathrm{sc}}$' },
       { key: 'B', label: 'Dead-network analysis', sublabel: 'Deactivate all sources and find equivalent resistance' },
       { key: 'C', label: 'Source Transformation', sublabel: 'Simplify circuit by converting sources' },
     ],
@@ -387,14 +393,14 @@ export const profile2Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Good',
-        body: 'The Isc method pairs well with the Vth you already found.',
+        body: 'The $I_{\\mathrm{sc}}$ method pairs well with the $V_{\\mathrm{th}}$ you already found.',
       },
     },
   },
   {
     kind: 'drawing_task',
     number: 8,
-    prompt: 'Before we can find Rth, we need to find Isc.',
+    prompt: 'Before we can find $R_{\\mathrm{th}}$, we need to find $I_{\\mathrm{sc}}$.',
     helperText:
       'Using the sketchpad on the right, redraw the circuit diagram and label all mesh currents/node voltages needed to determine the short-circuit current.',
     actionLabel: 'Check Drawing',
@@ -404,7 +410,7 @@ export const profile2Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Nice sketch',
-        body: 'Your relabeled diagram shows the three mesh loops needed for Isc.',
+        body: 'Your relabeled diagram shows the three mesh loops needed for $I_{\\mathrm{sc}}$.',
       },
     },
   },
@@ -432,18 +438,18 @@ export const profile2Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Great',
-        body: 'All three mesh equations are valid — solve for I3 to get Isc.',
+        body: 'All three mesh equations are valid — solve for $I_3$ to get $I_{\\mathrm{sc}}$.',
       },
     },
   },
   {
     kind: 'numeric_unit',
     number: 10,
-    prompt: 'Great, now solve and enter your value for Isc.',
+    prompt: 'Great, now solve and enter your value for $I_{\\mathrm{sc}}$.',
     helperText:
-      "Calculate the short-circuit current. (Think about what's the relation of Isc and I1, I2, and I3)",
-    fieldLabel: 'Final value of Isc:',
-    leftLabel: 'Isc =',
+      "Calculate the short-circuit current. (Think about what's the relation of $I_{\\mathrm{sc}}$ and $I_1$, $I_2$, and $I_3$)",
+    fieldLabel: 'Final value of $I_{\\mathrm{sc}}$:',
+    leftLabel: '$I_{\\mathrm{sc}} =$',
     unit: 'A',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
@@ -453,19 +459,19 @@ export const profile2Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Right',
-        body: 'Isc = 1.5 A — exactly the current through the shorted terminals.',
+        body: '$I_{\\mathrm{sc}} = 1.5\\,\\mathrm{A}$ — exactly the current through the shorted terminals.',
       },
     },
   },
   {
     kind: 'priors_then_input',
     number: 11,
-    prompt: 'Great, now solve and enter your value for Rth.',
+    prompt: 'Great, now solve and enter your value for $R_{\\mathrm{th}}$.',
     helperText:
-      'Recall the values for Vth and Isc you got before then calculate the final equivalent resistance.',
-    priors: ['Vth = 30 V', 'Isc = 1.5 A'],
-    fieldLabel: 'Final value of Rth:',
-    leftLabel: 'Rth =',
+      'Recall the values for $V_{\\mathrm{th}}$ and $I_{\\mathrm{sc}}$ you got before then calculate the final equivalent resistance.',
+    priors: ['$V_{\\mathrm{th}} = 30\\,\\mathrm{V}$', '$I_{\\mathrm{sc}} = 1.5\\,\\mathrm{A}$'],
+    fieldLabel: 'Final value of $R_{\\mathrm{th}}$:',
+    leftLabel: '$R_{\\mathrm{th}} =$',
     unit: 'Ω',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
@@ -475,7 +481,7 @@ export const profile2Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent',
-        body: 'Rth = Vth / Isc = 30 / 1.5 = 20 Ω. The Thévenin equivalent is complete.',
+        body: '$R_{\\mathrm{th}} = V_{\\mathrm{th}} / I_{\\mathrm{sc}} = 30 / 1.5 = 20\\,\\Omega$. The Thévenin equivalent is complete.',
       },
     },
   },
@@ -489,7 +495,7 @@ export const profile3Steps: Step[] = [
     number: 1,
     style: 'method',
     prompt: 'Select Your Method',
-    helperText: 'Which analysis method will you use to find Vth?',
+    helperText: 'Which analysis method will you use to find $V_{\\mathrm{th}}$?',
     actionLabel: 'Confirm Method',
     methodOptions: [
       { key: 'A', label: 'Nodal Analysis', sublabel: 'Apply KCL at nodes to find voltage' },
@@ -526,11 +532,11 @@ export const profile3Steps: Step[] = [
   {
     kind: 'labeled_equations',
     number: 3,
-    prompt: 'Now set up your KCL equations and enter your value for Vth.',
+    prompt: 'Now set up your KCL equations and enter your value for $V_{\\mathrm{th}}$.',
     helperText: 'Enter the correct KCL equations:',
     actionLabel: 'Check Solution',
     prefix: 'KCL',
-    valueField: { fieldLabel: 'Final value of Vth:', leftLabel: 'Vth =', unit: 'V', placeholder: '0.00' },
+    valueField: { fieldLabel: 'Final value of $V_{\\mathrm{th}}$:', leftLabel: '$V_{\\mathrm{th}} =$', unit: 'V', placeholder: '0.00' },
     empty: { equations: ['', '', ''] },
     filled: {
       equations: [
@@ -558,11 +564,11 @@ export const profile3Steps: Step[] = [
     kind: 'mcq',
     number: 4,
     style: 'method',
-    prompt: 'Nice! Now we need to find Rth using one of the following methods',
+    prompt: 'Nice! Now we need to find $R_{\\mathrm{th}}$ using one of the following methods',
     helperText: 'Select your method:',
     actionLabel: 'Confirm Method',
     methodOptions: [
-      { key: 'A', label: 'Use Isc (Short-circuit current)', sublabel: 'Find short-circuit current, then Rth = Vth / Isc' },
+      { key: 'A', label: 'Use $I_{\\mathrm{sc}}$ (Short-circuit current)', sublabel: 'Find short-circuit current, then $R_{\\mathrm{th}} = V_{\\mathrm{th}} / I_{\\mathrm{sc}}$' },
       { key: 'B', label: 'Dead-network analysis', sublabel: 'Deactivate all sources and find equivalent resistance' },
       { key: 'C', label: 'Source Transformation', sublabel: 'Simplify circuit by converting sources' },
     ],
@@ -572,17 +578,17 @@ export const profile3Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent!',
-        body: 'Using Isc is a reliable method to determine Rth when sources are active.',
+        body: 'Using $I_{\\mathrm{sc}}$ is a reliable method to determine $R_{\\mathrm{th}}$ when sources are active.',
       },
     },
   },
   {
     kind: 'numeric_unit',
     number: 5,
-    prompt: 'To find Isc, connect terminals a and b with a wire.',
-    helperText: 'This means: Va = Vb = Vab = 0. Write KCL at the merged node, then enter Isc.',
-    fieldLabel: 'Final value of Isc:',
-    leftLabel: 'Isc =',
+    prompt: 'To find $I_{\\mathrm{sc}}$, connect terminals a and b with a wire.',
+    helperText: 'This means: $V_a = V_b = V_{ab} = 0$. Write KCL at the merged node, then enter $I_{\\mathrm{sc}}$.',
+    fieldLabel: 'Final value of $I_{\\mathrm{sc}}$:',
+    leftLabel: '$I_{\\mathrm{sc}} =$',
     unit: 'A',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
@@ -592,17 +598,17 @@ export const profile3Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent!',
-        body: 'Isc = 1.5 A — the short-circuit current through terminals a–b.',
+        body: '$I_{\\mathrm{sc}} = 1.5\\,\\mathrm{A}$ — the short-circuit current through terminals a–b.',
       },
     },
   },
   {
     kind: 'numeric_unit',
     number: 6,
-    prompt: 'Great, now solve and enter your value for Rth.',
+    prompt: 'Great, now solve and enter your value for $R_{\\mathrm{th}}$.',
     helperText: 'Calculate the final equivalent resistance.',
-    fieldLabel: 'Final value of Rth:',
-    leftLabel: 'Rth =',
+    fieldLabel: 'Final value of $R_{\\mathrm{th}}$:',
+    leftLabel: '$R_{\\mathrm{th}} =$',
     unit: 'Ω',
     placeholder: '0.00',
     actionLabel: 'Check Solution',
@@ -612,7 +618,7 @@ export const profile3Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent!',
-        body: 'Rth = Vth / Isc = 30 / 1.5 = 20 Ω. The Thévenin equivalent is complete.',
+        body: '$R_{\\mathrm{th}} = V_{\\mathrm{th}} / I_{\\mathrm{sc}} = 30 / 1.5 = 20\\,\\Omega$. The Thévenin equivalent is complete.',
       },
     },
   },
@@ -624,12 +630,12 @@ export const profile4Steps: Step[] = [
   {
     kind: 'dual_numeric_unit',
     number: 1,
-    prompt: 'Solve the value for Vth and Rth.',
-    helperText: 'Use a proper method to solve for Vth and Rth (think about removing the 60 Ω resistor).',
+    prompt: 'Solve the value for $V_{\\mathrm{th}}$ and $R_{\\mathrm{th}}$.',
+    helperText: 'Use a proper method to solve for $V_{\\mathrm{th}}$ and $R_{\\mathrm{th}}$ (think about removing the $60\\,\\Omega$ resistor).',
     actionLabel: 'Check Solution',
     fields: [
-      { fieldLabel: 'Find value of Vth:', leftLabel: 'Vth =', unit: 'V', placeholder: '0.00' },
-      { fieldLabel: 'Find value of Rth:', leftLabel: 'Rth =', unit: 'Ω', placeholder: '0.00' },
+      { fieldLabel: 'Find value of $V_{\\mathrm{th}}$:', leftLabel: '$V_{\\mathrm{th}} =$', unit: 'V', placeholder: '0.00' },
+      { fieldLabel: 'Find value of $R_{\\mathrm{th}}$:', leftLabel: '$R_{\\mathrm{th}} =$', unit: 'Ω', placeholder: '0.00' },
     ],
     filled: { values: ['30', '20'] },
     checked: {
@@ -637,7 +643,7 @@ export const profile4Steps: Step[] = [
       feedback: {
         tone: 'success',
         title: 'Excellent',
-        body: 'Vth = 30 V and Rth = 20 Ω. The Thévenin equivalent is complete.',
+        body: '$V_{\\mathrm{th}} = 30\\,\\mathrm{V}$ and $R_{\\mathrm{th}} = 20\\,\\Omega$. The Thévenin equivalent is complete.',
       },
     },
   },

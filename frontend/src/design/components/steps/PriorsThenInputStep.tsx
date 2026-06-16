@@ -1,4 +1,5 @@
 import { MathAnswerInput } from '../../../components/MathAnswerInput';
+import { MathText } from '../../../components/MathText';
 import type { PriorsThenInputStepDef, StepState } from '../../types';
 
 interface PriorsThenInputStepProps {
@@ -22,13 +23,17 @@ export function PriorsThenInputStep({ step, state, value: controlledValue, onCha
       <div className="space-y-0.5">
         {step.priors.map((prior) => (
           <p key={prior} className="font-mono text-[14px] font-semibold text-black">
-            {prior}
+            <MathText text={prior} />
           </p>
         ))}
       </div>
-      <p className="mt-3 text-[14px] font-bold text-black">{step.fieldLabel}</p>
+      <p className="mt-3 text-[14px] font-bold text-black">
+        <MathText text={step.fieldLabel} />
+      </p>
       <div className="mt-2 flex items-start gap-2">
-        <span className="pt-2 text-[14px] font-semibold text-black">{step.leftLabel}</span>
+        <span className="pt-2 text-[14px] font-semibold text-black">
+          <MathText text={step.leftLabel} />
+        </span>
         <div className="min-w-0 flex-1">
           <MathAnswerInput
             value={value}

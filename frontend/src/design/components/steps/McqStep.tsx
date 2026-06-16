@@ -1,4 +1,5 @@
 import type { McqStepDef, StepState } from '../../types';
+import { MathText } from '../../../components/MathText';
 import { CircuitChoiceTile } from '../OptionCircuit';
 
 interface McqStepProps {
@@ -32,8 +33,12 @@ export function McqStep({ step, state, selectedOptionIndex, onSelect }: McqStepP
                   : 'border-[#E5E7EB] bg-white hover:border-[#C7C6FF]'
               }`}
             >
-              <p className="text-[14px] font-bold text-black">{option.label}</p>
-              <p className="mt-0.5 text-[13px] leading-[19px] text-[#6A7282]">{option.sublabel}</p>
+              <p className="text-[14px] font-bold text-black">
+                <MathText text={option.label} />
+              </p>
+              <p className="mt-0.5 text-[13px] leading-[19px] text-[#6A7282]">
+                <MathText text={option.sublabel} />
+              </p>
             </button>
           );
         })}

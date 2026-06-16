@@ -1,4 +1,5 @@
 import { MathAnswerInput } from '../../../components/MathAnswerInput';
+import { MathText } from '../../../components/MathText';
 import type { NumericPlainStepDef, StepState } from '../../types';
 
 interface NumericPlainStepProps {
@@ -19,7 +20,9 @@ export function NumericPlainStep({ step, state, value: controlledValue, onChange
   return (
     <div className="mt-3">
       {step.fieldLabel && (
-        <p className="text-[14px] font-bold text-black">{step.fieldLabel}</p>
+        <p className="text-[14px] font-bold text-black">
+          <MathText text={step.fieldLabel} />
+        </p>
       )}
       <MathAnswerInput
         value={value}

@@ -1,4 +1,5 @@
 import { MathAnswerInput } from '../../../components/MathAnswerInput';
+import { MathText } from '../../../components/MathText';
 import type { NumericUnitStepDef, StepState } from '../../types';
 
 interface NumericUnitStepProps {
@@ -19,9 +20,13 @@ export function NumericUnitStep({ step, state, value: controlledValue, onChange 
 
   return (
     <div className="mt-3">
-      <p className="text-[14px] font-bold text-black">{step.fieldLabel}</p>
+      <p className="text-[14px] font-bold text-black">
+        <MathText text={step.fieldLabel} />
+      </p>
       <div className="mt-2 flex items-start gap-2">
-        <span className="pt-2 text-[14px] font-semibold text-black">{step.leftLabel}</span>
+        <span className="pt-2 text-[14px] font-semibold text-black">
+          <MathText text={step.leftLabel} />
+        </span>
         <div className="min-w-0 flex-1">
           <MathAnswerInput
             value={value}

@@ -24,7 +24,8 @@ type TextInputStep = Extract<
       | 'numeric_plain'
       | 'numeric_unit'
       | 'labeled_equations'
-      | 'priors_then_input';
+      | 'priors_then_input'
+      | 'dual_numeric_unit';
   }
 >;
 
@@ -270,6 +271,7 @@ function isTextInputStep(step: Step): step is TextInputStep {
     'numeric_unit',
     'labeled_equations',
     'priors_then_input',
+    'dual_numeric_unit',
   ].includes(step.kind);
 }
 
@@ -282,7 +284,11 @@ function expectedTextAnswers(step: TextInputStep): string[] {
     case 'multi_value':
       return step.checked.values;
     case 'labeled_equations':
-      return step.checked.equations;
+      return step.valueField && step.checked.value != null
+        ? [...step.checked.equations, step.checked.value]
+        : step.checked.equations;
+    case 'dual_numeric_unit':
+      return step.checked.values;
     case 'numeric_plain':
     case 'numeric_unit':
     case 'priors_then_input':
@@ -300,20 +306,31 @@ function textAnswersAreCorrect(step: TextInputStep, values: string[]) {
       return step.checked.values.every((expected, index) => (
         normalizeText(values[index]) === normalizeText(expected)
       ));
-    case 'labeled_equations':
-      return step.checked.equations.every((expected, index) => (
+    case 'labeled_equations': {
+      const equationsMatch = step.checked.equations.every((expected, index) => (
         normalizeEquation(values[index]) === normalizeEquation(expected)
+      ));
+      if (!step.valueField || step.checked.value == null) return equationsMatch;
+      return equationsMatch
+        && numericAnswersMatch(values[step.checked.equations.length], step.checked.value);
+    }
+    case 'dual_numeric_unit':
+      return step.checked.values.every((expected, index) => (
+        numericAnswersMatch(values[index], expected)
       ));
     case 'numeric_plain':
     case 'numeric_unit':
-    case 'priors_then_input': {
-      const submitted = Number(values[0]);
-      const expected = Number(step.checked.value);
-      return Number.isFinite(submitted)
-        && Number.isFinite(expected)
-        && Math.abs(submitted - expected) < 1e-9;
-    }
+    case 'priors_then_input':
+      return numericAnswersMatch(values[0], step.checked.value);
   }
+}
+
+function numericAnswersMatch(submittedStr: string | undefined, expectedStr: string) {
+  const submitted = Number(submittedStr);
+  const expected = Number(expectedStr);
+  return Number.isFinite(submitted)
+    && Number.isFinite(expected)
+    && Math.abs(submitted - expected) < 1e-9;
 }
 
 function normalizeText(value: string | undefined) {

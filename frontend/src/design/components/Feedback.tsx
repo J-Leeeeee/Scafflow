@@ -1,4 +1,5 @@
 import type { Feedback as FeedbackData } from '../types';
+import { MathText } from '../../components/MathText';
 
 interface FeedbackProps {
   feedback: FeedbackData;
@@ -27,10 +28,10 @@ export function Feedback({ feedback }: FeedbackProps) {
       </span>
       <div className="text-[13px] leading-[18px]">
         <p className="font-bold" style={{ color: palette.titleText }}>
-          {feedback.title}
+          <MathText text={feedback.title} />
         </p>
         <p className="mt-0.5" style={{ color: palette.bodyText }}>
-          {feedback.body}
+          <MathText text={feedback.body} />
         </p>
       </div>
     </div>
