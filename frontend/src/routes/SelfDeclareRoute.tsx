@@ -89,22 +89,20 @@ const SECTIONS: Section[] = [
 
 const TOTAL_QUESTIONS = SECTIONS.reduce((n, s) => n + s.questions.length, 0);
 
-// Backend contract: declaration expects a 0|1|2 stress baseline (drives adaptive
-// config + cognitive_state.stress_level). The Attention items measure attention
-// *difficulty* on the 1–5 frequency scale (higher = more difficulty = higher
-// need), so we average them, shift to a 0–4 scale, and reuse the prior thresholds.
-function deriveStressBaseline(answers: Record<string, AnswerValue>): 0 | 1 | 2 {
-  const attention = SECTIONS.find((s) => s.key === 'attention')!;
-  const vals = attention.questions
-    .map((q) => answers[q.id])
-    .filter(Boolean)
-    .map((v) => FREQUENCY_OPTIONS.find((o) => o.value === v)?.numeric ?? 0);
-  if (vals.length === 0) return 0;
-  const avg = vals.reduce<number>((a, b) => a + b, 0) / vals.length; // 1–5
-  const score = avg - 1;                                     // 0–4
-  if (score >= 2.7) return 2;
-  if (score >= 1.3) return 1;
-  return 0;
+function buildSurveyResponses(answers: Record<string, AnswerValue>): Record<string, number> {
+  const responses: Record<string, number> = {};
+
+  for (const section of SECTIONS) {
+    const options = section.scaleType === 'frequency' ? FREQUENCY_OPTIONS : AGREEMENT_OPTIONS;
+    for (const question of section.questions) {
+      const answer = answers[question.id];
+      const numeric = options.find((option) => option.value === answer)?.numeric;
+      if (!numeric) throw new Error('All questions must be answered before submitting');
+      responses[question.id] = numeric;
+    }
+  }
+
+  return responses;
 }
 
 export function SelfDeclareRoute() {
@@ -127,11 +125,10 @@ export function SelfDeclareRoute() {
     setSubmitting(true);
     setError(null);
     try {
-      const stressBaseline = deriveStressBaseline(answers);
-      await onboarding.declaration({
+      await onboarding.selfDeclare({
         adhd_flag: adhdFlag,
-        stress_baseline: stressBaseline,
         course_level: courseLevel,
+        responses: buildSurveyResponses(answers),
       });
       navigate('/dashboard');
     } catch (err) {

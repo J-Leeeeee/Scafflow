@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ApiError, onboarding } from '../lib/api';
 
 interface AssignmentRow {
   n: number;
@@ -20,9 +22,31 @@ const GRID = 'grid grid-cols-[2fr_1.4fr_1.4fr_2fr_1.3fr] items-center gap-4 px-6
 export function CourseAssignmentsRoute() {
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
+  const [loadingHomework, setLoadingHomework] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  function openHomework(n: number) {
-    navigate(`/courses/${courseId}/hw/${n}/confidence`);
+  async function openHomework(n: number) {
+    if (loadingHomework !== null) return;
+
+    setLoadingHomework(n);
+    setError(null);
+    try {
+      const status = await onboarding.status();
+      if (!status.consentGiven) {
+        navigate('/onboarding/consent');
+      } else if (!status.selfDeclareComplete) {
+        navigate('/onboarding/self-declare');
+      } else if (!status.confidenceComplete || !status.profileNumber) {
+        navigate(`/courses/${courseId}/hw/${n}/confidence`);
+      } else {
+        navigate(`/problemset?profile=${status.profileNumber}`);
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to check onboarding status');
+      navigate('/onboarding/self-declare');
+    } finally {
+      setLoadingHomework(null);
+    }
   }
 
   return (
@@ -43,6 +67,11 @@ export function CourseAssignmentsRoute() {
       </header>
 
       <main className="mx-auto w-full max-w-[1400px] px-8 py-8">
+        {error && (
+          <p role="alert" className="mb-4 text-sm text-red-600">
+            {error}
+          </p>
+        )}
         <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.10)]">
           {/* Column header */}
           <div className={`${GRID} border-b border-[#E5E7EB] py-4 text-sm leading-[21px] font-bold text-[#5D5D5D]`}>
@@ -67,7 +96,7 @@ export function CourseAssignmentsRoute() {
                   }
                 }}
                 aria-label={`Open Homework Set ${hw.n}`}
-                className={`${GRID} cursor-pointer border-b border-[#E5E7EB] py-5 transition hover:bg-[#F8F9FA] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#615FFF]/30`}
+                className={`${GRID} cursor-pointer border-b border-[#E5E7EB] py-5 transition hover:bg-[#F8F9FA] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#615FFF]/30 ${loadingHomework === hw.n ? 'opacity-70' : ''}`}
               >
                 <span className="text-[15px] leading-[22.5px] font-bold text-black">
                   Homework Set {hw.n}

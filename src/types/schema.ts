@@ -164,6 +164,18 @@ export interface CognitiveState {
   updated_at: Date;
 }
 
+export interface LearnerSurveyResponses {
+  student_id: string;
+  self_declare_responses: Record<string, unknown> | null;
+  topic_confidence: Record<string, unknown> | null;
+  construct_scores: Record<string, unknown> | null;
+  classification_result: Record<string, unknown> | null;
+  self_declare_completed_at: Date | null;
+  confidence_completed_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
 // ============================================================================
 // AUDIT LOGS (append-only)
 // ============================================================================

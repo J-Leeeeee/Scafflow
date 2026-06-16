@@ -3,6 +3,41 @@ import { clearStore } from '../../test/redisMock';
 import request from 'supertest';
 import app from '../../app';
 
+function validSelfDeclareResponses(): Record<string, number> {
+  return {
+    b1_1: 5,
+    b1_2: 5,
+    b1_3: 5,
+    b1_4: 5,
+    b1_5: 5,
+    au_1: 4,
+    au_2: 4,
+    au_3: 4,
+    au_4: 4,
+    co_1: 3,
+    co_2: 3,
+    co_3: 3,
+    co_4: 3,
+    sr_1: 4,
+    sr_2: 4,
+    sr_3: 4,
+    sr_4: 4,
+    se_1: 4,
+    se_2: 4,
+    se_3: 4,
+    se_4: 4,
+  };
+}
+
+function confidenceTopics(): Record<string, number> {
+  return {
+    thevenin_norton: 4,
+    mesh_current: 3,
+    node_voltage: 2,
+    kirchhoff_law: 5,
+  };
+}
+
 beforeEach(async () => {
   await truncateAll();
   clearStore();
@@ -99,6 +134,101 @@ describe('POST /api/onboarding/declaration', () => {
 });
 
 // ── Diagnostic problems ───────────────────────────────────────────────────────
+
+describe('learner profile survey flow', () => {
+  it('persists self-declare responses and reports status before confidence', async () => {
+    const agent = await registerAndLogin('survey-status@uw.edu');
+
+    const selfDeclareRes = await agent.post('/api/onboarding/self-declare').send({
+      adhd_flag: false,
+      course_level: 'intro',
+      responses: validSelfDeclareResponses(),
+    });
+    expect(selfDeclareRes.status).toBe(200);
+    expect(selfDeclareRes.body.self_declared).toBe(true);
+
+    const statusRes = await agent.get('/api/onboarding/status');
+    expect(statusRes.status).toBe(200);
+    expect(statusRes.body).toMatchObject({
+      consentGiven: true,
+      selfDeclareComplete: true,
+      confidenceComplete: false,
+      learnerProfile: null,
+      profileNumber: null,
+    });
+  });
+
+  it('classifies after confidence and persists learner_profile plus classification_result', async () => {
+    const agent = request.agent(app);
+    const registerRes = await agent
+      .post('/api/auth/register')
+      .send({ email: 'survey-classify@uw.edu', password: 'pw', consent: true });
+    expect(registerRes.status).toBe(201);
+    const studentId = registerRes.body.id as string;
+
+    await agent.post('/api/onboarding/self-declare').send({
+      adhd_flag: false,
+      course_level: 'intro',
+      responses: validSelfDeclareResponses(),
+    }).expect(200);
+
+    const confidenceRes = await agent.post('/api/onboarding/confidence').send({
+      topics: confidenceTopics(),
+    });
+    expect(confidenceRes.status).toBe(200);
+    expect(confidenceRes.body).toMatchObject({
+      status: 'Ok',
+      assignedProfile: 'Profile3',
+      learnerProfile: 'distracted',
+      profileNumber: 3,
+      topicConfidenceScore: 3.5,
+    });
+
+    const dbCheck = await pool.query<{
+      learner_profile: string | null;
+      classification_result: { assignedProfile?: string } | null;
+      confidence_completed_at: Date | null;
+    }>(
+      `SELECT s.learner_profile, lsr.classification_result, lsr.confidence_completed_at
+         FROM students s
+         JOIN learner_survey_responses lsr ON lsr.student_id = s.id
+        WHERE s.id = $1`,
+      [studentId],
+    );
+    expect(dbCheck.rows[0].learner_profile).toBe(confidenceRes.body.learnerProfile);
+    expect(dbCheck.rows[0].classification_result?.assignedProfile).toBe('Profile3');
+    expect(dbCheck.rows[0].confidence_completed_at).toBeTruthy();
+
+    const statusRes = await agent.get('/api/onboarding/status');
+    expect(statusRes.status).toBe(200);
+    expect(statusRes.body).toMatchObject({
+      confidenceComplete: true,
+      learnerProfile: 'distracted',
+      profileNumber: 3,
+    });
+  });
+
+  it('409 when confidence is submitted before self-declare', async () => {
+    const agent = await registerAndLogin('confidence-gate@uw.edu');
+
+    const res = await agent.post('/api/onboarding/confidence').send({
+      topics: confidenceTopics(),
+    });
+    expect(res.status).toBe(409);
+  });
+
+  it('403 when self-declare is submitted before consent', async () => {
+    const agent = request.agent(app);
+    await agent.post('/api/auth/register').send({ email: 'survey-noconsent@uw.edu', password: 'pw' });
+
+    const res = await agent.post('/api/onboarding/self-declare').send({
+      adhd_flag: false,
+      course_level: 'intro',
+      responses: validSelfDeclareResponses(),
+    });
+    expect(res.status).toBe(403);
+  });
+});
 
 describe('GET /api/onboarding/problems', () => {
   it('200 with 3 problems after consent', async () => {

@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import pool from '../../db/client';
 import { AuthRequest } from '../auth/middleware';
 import type { CourseLevel, LearnerProfile, Topic } from '../../types/schema';
+import { computeAdaptiveThresholds } from '../../services/onboarding-survey';
 
 // Which 3 topics to use for cold-start diagnostics per course level
 const DIAGNOSTIC_TOPICS: Record<CourseLevel, Topic[]> = {
@@ -62,12 +63,11 @@ export async function declaration(req: Request, res: Response): Promise<void> {
   }
 
   // Compute adaptive thresholds at write time (Constraint #6)
-  const isHighNeed = Boolean(adhd_flag) || stress_baseline === 2;
-  const isAdvanced = course_level === 'advanced';
-  const idleThreshold  = isHighNeed ? 60  : isAdvanced ? 180 : 90;
-  const errorThreshold = isHighNeed ? 2   : isAdvanced ? 4   : 3;
-  const hintBudget     = isHighNeed ? 4   : isAdvanced ? 2   : 3;
-  const responseLength = isHighNeed ? 'brief' : isAdvanced ? 'short' : 'medium';
+  const { idleThreshold, errorThreshold, hintBudget, responseLength } = computeAdaptiveThresholds(
+    Boolean(adhd_flag),
+    stress_baseline as 0 | 1 | 2,
+    course_level,
+  );
 
   const client = await pool.connect();
   try {

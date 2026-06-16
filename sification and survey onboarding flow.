@@ -1,0 +1,23 @@
+warning: in the working copy of 'frontend/src/lib/api.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/routes/ConfidenceSurveyRoute.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/routes/CourseAssignmentsRoute.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/routes/SelfDeclareRoute.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'schema.sql', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/api/onboarding/handler.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/api/onboarding/onboarding.integration.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/api/onboarding/router.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/globalSetup.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/types/schema.ts', LF will be replaced by CRLF the next time Git touches it
+ frontend/src/lib/api.ts                           |  50 [32m+++++++++[m
+ frontend/src/routes/ConfidenceSurveyRoute.tsx     |  39 [32m++++[m[31m---[m
+ frontend/src/routes/CourseAssignmentsRoute.tsx    |  35 [32m+++++[m[31m-[m
+ frontend/src/routes/SelfDeclareRoute.tsx          |  35 [32m+++[m[31m---[m
+ package.json                                      |   1 [32m+[m
+ schema.sql                                        |  12 [32m++[m
+ src/api/onboarding/handler.ts                     |  12 [32m+[m[31m-[m
+ src/api/onboarding/onboarding.integration.test.ts | 130 [32m++++++++++++++++++++++[m
+ src/api/onboarding/router.ts                      |   4 [32m+[m
+ src/test/globalSetup.ts                           |  14 [32m+++[m
+ src/types/schema.ts                               |  12 [32m++[m
+ 11 files changed, 303 insertions(+), 41 deletions(-)

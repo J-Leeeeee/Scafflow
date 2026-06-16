@@ -43,6 +43,20 @@ export default async function globalSetup(): Promise<void> {
       const sql = fs.readFileSync(schemaPath, 'utf8');
       await testClient.query(sql);
       console.log('[globalSetup] Schema applied to scaffold_test.');
+    } else {
+      await testClient.query(`
+        CREATE TABLE IF NOT EXISTS learner_survey_responses (
+          student_id                UUID PRIMARY KEY REFERENCES students(id) ON DELETE CASCADE,
+          self_declare_responses    JSONB,
+          topic_confidence          JSONB,
+          construct_scores          JSONB,
+          classification_result     JSONB,
+          self_declare_completed_at TIMESTAMPTZ,
+          confidence_completed_at   TIMESTAMPTZ,
+          created_at                TIMESTAMPTZ NOT NULL DEFAULT now(),
+          updated_at                TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+      `);
     }
   } finally {
     testClient.release();

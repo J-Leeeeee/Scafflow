@@ -49,6 +49,38 @@ export type Topic = 'kvl' | 'kcl' | 'phasors' | 'impedance' | 'thevenin';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type StepType = 'mcq' | 'numeric' | 'planning' | 'open' | 'drawing_task';
 export type CircuitInteractionType = 'ground_node' | 'short_mesh';
+export type LearnerProfileLabel = 'Profile1' | 'Profile2' | 'Profile3' | 'Profile4';
+export type ProfileNumber = 1 | 2 | 3 | 4;
+export type ConstructKey =
+  | 'attentionDifficulty'
+  | 'autonomy'
+  | 'competence'
+  | 'selfRegulation'
+  | 'selfEfficacy';
+export type ConstructLevel = 'Low' | 'Medium' | 'High';
+export type ConfidenceTopicKey = 'thevenin_norton' | 'mesh_current' | 'node_voltage' | 'kirchhoff_law';
+
+export interface ProfileClassification {
+  status: 'Ok';
+  constructScores: Record<ConstructKey, number>;
+  levels: Record<ConstructKey, ConstructLevel>;
+  profileScores: Record<'profile1' | 'profile2' | 'profile3' | 'profile4', number>;
+  assignedProfile: LearnerProfileLabel;
+  profileNumber: ProfileNumber;
+  learnerProfile: LearnerProfile;
+  confidence: number;
+  flag: 'Ambiguous' | null;
+  tieBreakUsed: boolean;
+  topicConfidenceScore: number | null;
+}
+
+export interface OnboardingStatus {
+  consentGiven: boolean;
+  selfDeclareComplete: boolean;
+  confidenceComplete: boolean;
+  learnerProfile: LearnerProfile | null;
+  profileNumber: ProfileNumber | null;
+}
 
 export interface PublicProblem {
   id: string;
@@ -145,6 +177,24 @@ export const onboarding = {
     method: 'POST',
     body: JSON.stringify(input),
   }),
+
+  selfDeclare: (input: {
+    adhd_flag: boolean;
+    course_level: CourseLevel;
+    responses: Record<string, number>;
+  }) => request<{ self_declared: true }>('/api/onboarding/self-declare', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  }),
+
+  confidence: (input: {
+    topics: Record<ConfidenceTopicKey, number>;
+  }) => request<ProfileClassification>('/api/onboarding/confidence', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  }),
+
+  status: () => request<OnboardingStatus>('/api/onboarding/status'),
 
   getDiagnosticProblems: () =>
     request<{ problems: PublicProblem[] }>('/api/onboarding/problems'),

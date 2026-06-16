@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, problems } from '../lib/api';
+import { ApiError, onboarding, type ConfidenceTopicKey } from '../lib/api';
 
 const TOPICS = [
-  'Thevenin Norton Equivalent',
-  'Mesh Current',
-  'Node Voltage Analysis',
-  'Kirchhoff Law',
+  { key: 'thevenin_norton', label: 'Thevenin Norton Equivalent' },
+  { key: 'mesh_current', label: 'Mesh Current' },
+  { key: 'node_voltage', label: 'Node Voltage Analysis' },
+  { key: 'kirchhoff_law', label: 'Kirchhoff Law' },
 ] as const;
 
 const LEVELS = ['Not Familiar', 'Beginner', 'Intermediate', 'Proficient', 'Expert'] as const;
@@ -16,6 +16,7 @@ export function ConfidenceSurveyRoute() {
   // Maps a topic index to the chosen proficiency level index.
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const answeredCount = Object.keys(answers).length;
   const allAnswered = answeredCount === TOPICS.length;
@@ -23,14 +24,21 @@ export function ConfidenceSurveyRoute() {
   async function handleSubmit() {
     if (!allAnswered || submitting) return;
     setSubmitting(true);
-    // Ratings are captured client-side only (no proficiency endpoint); the survey
-    // simply gates entry into the existing problem flow.
+    setError(null);
     try {
-      const next = await problems.next();
-      navigate(`/problems/${next.id}`, { state: { setName: 'Homework Set 1' } });
+      const topics = TOPICS.reduce((acc, topic, index) => {
+        acc[topic.key] = answers[index] + 1;
+        return acc;
+      }, {} as Record<ConfidenceTopicKey, number>);
+      const classification = await onboarding.confidence({ topics });
+      navigate(`/problemset?profile=${classification.profileNumber}`);
     } catch (err) {
       if (err instanceof ApiError) {
-        navigate('/dashboard');
+        if (err.status === 409) {
+          navigate('/onboarding/self-declare');
+          return;
+        }
+        setError(err.message);
         return;
       }
       throw err;
@@ -81,12 +89,12 @@ export function ConfidenceSurveyRoute() {
             </thead>
             <tbody>
               {TOPICS.map((topic, ti) => (
-                <tr key={topic}>
+                <tr key={topic.key}>
                   <th
                     scope="row"
                     className="border border-[#D1D5DC] px-4 py-4 text-left text-base font-normal"
                   >
-                    {topic}
+                    {topic.label}
                   </th>
                   {LEVELS.map((level, li) => (
                     <td key={level} className="border border-[#D1D5DC] text-center">
@@ -98,7 +106,7 @@ export function ConfidenceSurveyRoute() {
                           onChange={() => setAnswers((prev) => ({ ...prev, [ti]: li }))}
                           className="size-6 cursor-pointer accent-[#364153]"
                         />
-                        <span className="sr-only">{`${topic}: ${level}`}</span>
+                        <span className="sr-only">{`${topic.label}: ${level}`}</span>
                       </label>
                     </td>
                   ))}
@@ -110,6 +118,11 @@ export function ConfidenceSurveyRoute() {
 
         {/* Submit card */}
         <section className="rounded-[10px] bg-white p-8 shadow-[0_4px_6px_rgba(0,0,0,0.10),0_10px_15px_rgba(0,0,0,0.10)]">
+          {error && (
+            <p role="alert" className="mb-4 text-sm text-red-600">
+              {error}
+            </p>
+          )}
           <div className="flex items-center justify-end gap-6">
             <p className="text-sm leading-5 text-[#6A7282]">
               {answeredCount} of {TOPICS.length} questions answered

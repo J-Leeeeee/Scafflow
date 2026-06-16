@@ -119,6 +119,18 @@ CREATE TABLE cognitive_state (
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE learner_survey_responses (
+    student_id                UUID PRIMARY KEY REFERENCES students(id) ON DELETE CASCADE,
+    self_declare_responses    JSONB,
+    topic_confidence          JSONB,
+    construct_scores          JSONB,
+    classification_result     JSONB,
+    self_declare_completed_at TIMESTAMPTZ,
+    confidence_completed_at   TIMESTAMPTZ,
+    created_at                TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at                TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- ============================================================================
 -- AUDIT LOGS  (append-only — never UPDATE, never DELETE)
 -- ============================================================================
