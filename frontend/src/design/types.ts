@@ -32,6 +32,13 @@ export interface McqOption {
   kind: CircuitOptionKind;
 }
 
+/** Text-card MCQ option (method picker: Nodal / Mesh / Source Transformation, etc.). */
+export interface MethodOption {
+  key: string;
+  label: string;
+  sublabel: string;
+}
+
 /** Highlight overlay drawn on top of the circuit diagram for a given step. */
 export type CircuitOverlay =
   | 'none'
@@ -49,12 +56,19 @@ export interface CommonStep {
   canvasTask?: CanvasTask;
 }
 
-export interface McqStepDef extends CommonStep {
+/**
+ * MCQ step. Two visual styles share the same `selectedIndex` answer shape:
+ *  - 'circuit' (default): 4 circuit-diagram tiles keyed by `options`.
+ *  - 'method': text cards (label + sublabel) keyed by `methodOptions`.
+ */
+export type McqStepDef = CommonStep & {
   kind: 'mcq';
-  options: McqOption[];
   filled: { selectedIndex: number };
   checked: { selectedIndex: number; feedback: Feedback };
-}
+} & (
+  | { style?: 'circuit'; options: McqOption[]; methodOptions?: never }
+  | { style: 'method'; methodOptions: MethodOption[]; options?: never }
+);
 
 export interface MultiValueStepDef extends CommonStep {
   kind: 'multi_value';
@@ -89,9 +103,11 @@ export interface NumericUnitStepDef extends CommonStep {
 export interface LabeledEquationsStepDef extends CommonStep {
   kind: 'labeled_equations';
   prefix: string;
-  empty: { equations: string[] };
-  filled: { equations: string[] };
-  checked: { equations: string[]; feedback: Feedback };
+  /** Optional trailing numeric field merged onto the same screen (e.g. P3: KCL + Vth). */
+  valueField?: { fieldLabel: string; leftLabel: string; unit: string; placeholder?: string };
+  empty: { equations: string[]; value?: string };
+  filled: { equations: string[]; value?: string };
+  checked: { equations: string[]; value?: string; feedback: Feedback };
 }
 
 export interface DrawingTaskStepDef extends CommonStep {
@@ -111,6 +127,21 @@ export interface PriorsThenInputStepDef extends CommonStep {
   checked: { value: string; feedback: Feedback };
 }
 
+export interface NumericField {
+  fieldLabel: string;
+  leftLabel: string;
+  unit: string;
+  placeholder?: string;
+}
+
+/** Two number+unit fields on a single screen (e.g. Profile 4: Vth + Rth). */
+export interface DualNumericUnitStepDef extends CommonStep {
+  kind: 'dual_numeric_unit';
+  fields: NumericField[];
+  filled: { values: string[] };
+  checked: { values: string[]; feedback: Feedback };
+}
+
 export type Step =
   | McqStepDef
   | MultiValueStepDef
@@ -119,6 +150,7 @@ export type Step =
   | NumericUnitStepDef
   | LabeledEquationsStepDef
   | DrawingTaskStepDef
-  | PriorsThenInputStepDef;
+  | PriorsThenInputStepDef
+  | DualNumericUnitStepDef;
 
 export type StepKind = Step['kind'];

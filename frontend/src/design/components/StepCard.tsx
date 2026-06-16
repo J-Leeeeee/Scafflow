@@ -8,6 +8,7 @@ import { NumericUnitStep } from './steps/NumericUnitStep';
 import { LabeledEquationsStep } from './steps/LabeledEquationsStep';
 import { DrawingTaskStep } from './steps/DrawingTaskStep';
 import { PriorsThenInputStep } from './steps/PriorsThenInputStep';
+import { DualNumericUnitStep } from './steps/DualNumericUnitStep';
 
 interface StepCardProps {
   step: Step;
@@ -153,6 +154,15 @@ function StepBody({
           state={state}
           value={answerValues?.[0]}
           onChange={(value) => onTextAnswerChange?.(0, value)}
+        />
+      );
+    case 'dual_numeric_unit':
+      return (
+        <DualNumericUnitStep
+          step={step}
+          state={state}
+          values={answerValues}
+          onChange={onTextAnswerChange}
         />
       );
   }
