@@ -1,6 +1,10 @@
 import { Fragment, useMemo } from 'react';
 import katex from 'katex';
-import { parseMathSegments } from '../lib/parse-math-segments';
+import {
+  bindTrailingMathPunctuation,
+  formatMathTex,
+  parseMathSegments,
+} from '../lib/parse-math-segments';
 
 interface MathTextProps {
   text: string;
@@ -12,13 +16,16 @@ interface MathTextProps {
  * Returns a bare fragment (no block wrapper) so the whole thing inherits font
  * size, weight, color and `white-space` from the parent element it sits inside
  * (`<h2>`, `<p>`, `<span>`, ...). Plain segments stay raw text nodes so `\n`
- * line breaks keep working under `whitespace-pre-line` parents; math segments
- * are typeset with KaTeX (mirroring `MathAnswerInput`'s render options) inside
- * a small `mathtext-math` span used for the scoped `.katex { font-size: 1em }`
- * rule in styles/index.css.
+ * line breaks keep working under `whitespace-pre-line` parents. Math segments
+ * are typeset with KaTeX (mirroring `MathAnswerInput`'s render options), and
+ * immediate trailing punctuation is folded into the same KaTeX render via
+ * `\text{...}` so it belongs visually to the formula.
  */
 export function MathText({ text }: MathTextProps) {
-  const segments = useMemo(() => parseMathSegments(text), [text]);
+  const segments = useMemo(
+    () => bindTrailingMathPunctuation(parseMathSegments(text)),
+    [text],
+  );
 
   return (
     <>
@@ -27,10 +34,16 @@ export function MathText({ text }: MathTextProps) {
           return <Fragment key={index}>{segment.value}</Fragment>;
         }
 
-        const html = renderMath(segment.value);
+        const tex = formatMathTex(segment.value, segment.trailingPunctuation);
+        const html = renderMath(tex);
         if (html === null) {
           // Fall back to the raw TeX as plain text so bad authoring never crashes the route.
-          return <Fragment key={index}>{segment.value}</Fragment>;
+          return (
+            <Fragment key={index}>
+              {segment.value}
+              {segment.trailingPunctuation ?? null}
+            </Fragment>
+          );
         }
 
         return (

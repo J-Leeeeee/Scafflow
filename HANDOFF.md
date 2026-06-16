@@ -25,9 +25,10 @@ Read this first, then read [CLAUDE.md](CLAUDE.md) for project rules.
 
 - Server: **Framelink** `figma-developer-mcp` (REST API + Personal Access Token).
 - Token is in [.env](.env) as `FIGMA_API_KEY` (gitignored).
-- [.mcp.json](.mcp.json) launches [scripts/figma-mcp.sh](scripts/figma-mcp.sh) which sources `.env` before exec'ing the MCP. **This wrapper exists because shell-style `${VAR}` substitution in `.mcp.json` args is unreliable across MCP clients.** Keep the wrapper.
-- File key: `qWB8UPBr4Us99ABkRspWRQ` ("Profile Prototypes (Copy)", owned by jacobl35@uw.edu).
-- Tools exposed: `mcp__figma__get_figma_data`, `mcp__figma__download_figma_images`.
+- [.mcp.json](.mcp.json) runs `npx -y figma-developer-mcp --stdio --env .env` (Claude Code project scope).
+- [scripts/figma-mcp.sh](scripts/figma-mcp.sh) is a legacy wrapper for other MCP clients; same `--env` behavior.
+- **Claude Code:** see [docs/claude-code-figma-mcp.md](docs/claude-code-figma-mcp.md).
+- Tools exposed: `get_figma_data`, `download_figma_images`.
 
 ### Per-frame generation workflow
 

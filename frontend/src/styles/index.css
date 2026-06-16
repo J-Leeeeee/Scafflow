@@ -36,6 +36,9 @@
 
 .mathtext-math .katex {
   font-size: 1em;
+  text-rendering: inherit;
+  -webkit-font-smoothing: inherit;
+  -moz-osx-font-smoothing: inherit;
 }
 
 html,

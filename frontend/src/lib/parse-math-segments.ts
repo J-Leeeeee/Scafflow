@@ -16,6 +16,12 @@ export interface MathSegment {
   value: string;
 }
 
+export type MathRenderSegment =
+  | { type: 'text'; value: string }
+  | { type: 'math'; value: string; trailingPunctuation?: string };
+
+const TRAILING_MATH_PUNCTUATION_PATTERN = /^[.,:;!?]+/;
+
 export function parseMathSegments(text: string): MathSegment[] {
   const pattern = /\$([^$]+)\$/g;
   const segments: MathSegment[] = [];
@@ -38,4 +44,66 @@ export function parseMathSegments(text: string): MathSegment[] {
   }
 
   return segments;
+}
+
+export function bindTrailingMathPunctuation(segments: MathSegment[]): MathRenderSegment[] {
+  const renderSegments: MathRenderSegment[] = [];
+
+  for (const segment of segments) {
+    if (segment.type === 'math') {
+      renderSegments.push({ type: 'math', value: segment.value });
+      continue;
+    }
+
+    const match = segment.value.match(TRAILING_MATH_PUNCTUATION_PATTERN);
+    const previous = renderSegments[renderSegments.length - 1];
+
+    if (match && previous?.type === 'math') {
+      const punctuation = match[0];
+      renderSegments[renderSegments.length - 1] = {
+        ...previous,
+        trailingPunctuation: `${previous.trailingPunctuation ?? ''}${punctuation}`,
+      };
+
+      const remainingText = segment.value.slice(punctuation.length);
+      if (remainingText.length > 0) {
+        renderSegments.push({ type: 'text', value: remainingText });
+      }
+      continue;
+    }
+
+    renderSegments.push({ type: 'text', value: segment.value });
+  }
+
+  return renderSegments;
+}
+
+export function formatMathTex(tex: string, trailingPunctuation?: string): string {
+  if (!trailingPunctuation) return tex;
+  return `${tex}\\text{${escapeTextMacroContent(trailingPunctuation)}}`;
+}
+
+function escapeTextMacroContent(value: string): string {
+  let escaped = '';
+
+  for (const char of value) {
+    switch (char) {
+      case '\\':
+        escaped += '\\textbackslash{}';
+        break;
+      case '{':
+      case '}':
+      case '$':
+      case '&':
+      case '%':
+      case '#':
+      case '_':
+        escaped += `\\${char}`;
+        break;
+      default:
+        escaped += char;
+    }
+  }
+
+  return escaped;
 }

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, auth, homeworkSets, problems, type HomeworkSet } from '../lib/api';
+import { ApiError, auth } from '../lib/api';
 
 interface CourseCardView {
   id: string;
@@ -8,114 +8,24 @@ interface CourseCardView {
   description: string;
   term: string;
   initials: string;
-  problemId?: string;
 }
 
-const SAMPLE_COURSES: CourseCardView[] = [
-  {
-    id: 'sample-advising',
-    title: 'ECE Student Advising Resources',
-    description: 'ECE Student Advising Resources and Information',
-    term: 'Spring 2025',
-    initials: 'ECE',
-  },
-  {
-    id: 'sample-ee-242',
-    title: 'E E 242 A',
-    description: 'D.C. to 26 Signals, Systems, and Transforms',
-    term: 'Spring 2025',
-    initials: 'E',
-  },
-  {
-    id: 'sample-ee-271',
-    title: 'E E 271 A',
-    description: 'Digital Circuits And Systems',
-    term: 'Spring 2025',
-    initials: 'E',
-  },
-  {
-    id: 'sample-ee-280',
-    title: 'E E 280 A',
-    description: 'Exploring Design',
-    term: 'Spring 2025',
-    initials: 'E',
-  },
-  {
-    id: 'sample-grad-advising',
-    title: 'ECE Graduate Program Advising',
-    description: 'ECE Graduate Program Advising Resources',
-    term: 'Summer 2025',
-    initials: 'ECE',
-  },
-  {
-    id: 'sample-fin-250',
-    title: 'FIN 250 A',
-    description: 'Personal Finance',
-    term: 'Fall 2024',
-    initials: 'FIN',
-  },
-  {
-    id: 'sample-placeholder',
-    title: 'COURSE ### X',
-    description: 'Course Title Here',
-    term: 'Quarter Year',
-    initials: '?',
-  },
-];
-
-const TOPIC_LABEL: Record<string, string> = {
-  kvl: 'KVL', kcl: 'KCL', phasors: 'Phasors', impedance: 'Impedance', thevenin: 'Thevenin',
+// The student demo flow surfaces a single course; the assignments live behind it.
+const COURSE: CourseCardView = {
+  id: 'ee-xxx',
+  title: 'EE XXX',
+  description: 'Circuit Theory',
+  term: 'Autumn 2026',
+  initials: 'EE',
 };
-const COURSE_LEVEL_LABEL: Record<string, string> = {
-  intro: 'Intro circuits', intermediate: 'Intermediate circuits', advanced: 'Advanced circuits',
-};
-
-function toCourseCard(set: HomeworkSet): CourseCardView {
-  const topic = set.topic ? TOPIC_LABEL[set.topic] ?? set.topic : 'Course';
-  const level = COURSE_LEVEL_LABEL[set.course_level] ?? set.course_level;
-  const firstProblem = set.problems[0];
-  return {
-    id: set.id,
-    title: set.name,
-    description: `${level} ${topic} problem set`,
-    term: 'Spring 2025',
-    initials: set.name.match(/[A-Za-z0-9]+/g)?.slice(0, 4).map(w => w[0]).join('').toUpperCase() || topic.slice(0, 4).toUpperCase() || '?',
-    problemId: firstProblem?.id,
-  };
-}
 
 export function DashboardRoute() {
   const navigate = useNavigate();
-  const [sets, setSets] = useState<HomeworkSet[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [openingCourseId, setOpeningCourseId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadHomeworkSets() {
-      try {
-        const result = await homeworkSets.list();
-        if (!active) return;
-        setSets(result);
-      } catch (err) {
-        if (!active) return;
-        if (err instanceof ApiError && err.status === 401) return;
-        setError(err instanceof ApiError ? err.message : 'Unable to load dashboard courses');
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    loadHomeworkSets();
-    return () => { active = false; };
-  }, []);
-
-  // Real DB courses first, then sample placeholders.
-  const courses = useMemo(() => [...sets.map(toCourseCard), ...SAMPLE_COURSES], [sets]);
+  const courses = [COURSE];
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -130,22 +40,8 @@ export function DashboardRoute() {
     }
   }
 
-  async function openCourse(course: CourseCardView) {
-    setOpeningCourseId(course.id);
-    setError(null);
-    try {
-      if (course.problemId) {
-        navigate(`/problems/${course.problemId}`, { state: { setName: course.title } });
-        return;
-      }
-      if (course.id.startsWith('sample-')) return; // placeholder — no problem to open
-      const next = await problems.next();
-      navigate(`/problems/${next.id}`, { state: { setName: course.title } });
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Unable to open an assignment for this course');
-    } finally {
-      setOpeningCourseId(null);
-    }
+  function openCourse(course: CourseCardView) {
+    navigate(`/courses/${course.id}`);
   }
 
   return (
@@ -165,16 +61,11 @@ export function DashboardRoute() {
             {error}
           </p>
         )}
-        {loading && (
-          <p className="mb-4 text-sm text-[#5D5D5D]">Loading your courses...</p>
-        )}
-
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {courses.map((course) => (
             <CourseCard
               key={course.id}
               course={course}
-              opening={openingCourseId === course.id}
               onOpen={() => openCourse(course)}
             />
           ))}
@@ -220,25 +111,19 @@ export function DashboardRoute() {
 
 function CourseCard({
   course,
-  opening,
   onOpen,
 }: {
   course: CourseCardView;
-  opening: boolean;
   onOpen: () => void;
 }) {
-  const clickable = !!course.problemId;
   return (
     <article
-      role={clickable ? 'button' : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      onClick={clickable ? onOpen : undefined}
-      onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } } : undefined}
-      className={[
-        'overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.10)] transition',
-        clickable ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(0,0,0,0.10)] hover:border-[#615FFF]/40 focus:outline-none focus:ring-2 focus:ring-[#615FFF]/30' : '',
-      ].join(' ')}
-      aria-label={clickable ? `Open ${course.title}` : undefined}
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } }}
+      className="cursor-pointer overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.10)] transition hover:-translate-y-0.5 hover:border-[#615FFF]/40 hover:shadow-[0_10px_20px_rgba(0,0,0,0.10)] focus:outline-none focus:ring-2 focus:ring-[#615FFF]/30"
+      aria-label={`Open ${course.title}`}
     >
       <div className="flex h-40 items-center justify-center bg-[linear-gradient(157deg,#615FFF_0%,#4A47CC_100%)]">
         <p className="text-5xl leading-[72px] font-bold text-white/20">{course.initials}</p>
@@ -251,7 +136,7 @@ function CourseCard({
             {course.description}
           </p>
           <p className="mt-1 text-xs leading-[18px] font-medium tracking-[0.05em] text-[#99A1AF] uppercase">
-            {opening ? 'Opening assignment...' : course.term}
+            {course.term}
           </p>
         </div>
 
@@ -264,7 +149,6 @@ function CourseCard({
           </IconButton>
           <IconButton
             label="Open course work"
-            disabled={!clickable || opening}
             onClick={(e) => { e.stopPropagation(); onOpen(); }}
           >
             <DocumentIcon />

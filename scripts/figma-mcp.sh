@@ -7,4 +7,5 @@ if [ -f "$ENV_FILE" ]; then
   source "$ENV_FILE"
   set +a
 fi
-exec npx -y figma-developer-mcp --stdio
+# --env loads FIGMA_API_KEY from repo .env (same as .mcp.json args for Claude Code)
+exec npx -y figma-developer-mcp --stdio --env "$ENV_FILE"

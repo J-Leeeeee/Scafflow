@@ -38,10 +38,10 @@ To build the frontend shell:
 npm run build:frontend
 ```
 
-## Figma MCP readiness
+## Figma MCP (Claude Code + Cursor)
 
-- The repo already includes a `figma` MCP server entry in `.mcp.json`.
-- Confirm your Codex/Figma connection is authenticated with an account that can
-  access the design file.
-- Make sure source-of-truth frames have stable names before generating UI.
-- Identify reusable Figma components before the first generation pass.
+- Project MCP config: [`.mcp.json`](.mcp.json) — **figma** server via `figma-developer-mcp`
+- Set `FIGMA_API_KEY` in [`.env`](.env) (see [`.env.example`](.env.example))
+- **Claude Code setup:** [docs/claude-code-figma-mcp.md](docs/claude-code-figma-mcp.md)
+- Design file key: `qWB8UPBr4Us99ABkRspWRQ`
+- Paste a **single-frame** Figma URL in chat; avoid parent SECTION nodes
