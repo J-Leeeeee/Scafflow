@@ -154,4 +154,35 @@ describe('POST /api/problems/:id/submit', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ correct: false, intervention: null }));
   });
+
+  // Regression: dividing by a raw negative ground truth flipped the inequality,
+  // so a wrong-sign answer was graded correct.
+  it('grades negative ground truth by relative magnitude', async () => {
+    const negativeProblem = { topic: 'kvl', ground_truth_answer: -5, tolerance: 0.01 };
+
+    async function grade(submittedAnswer: number) {
+      (mockPool.query as jest.Mock)
+        .mockResolvedValueOnce({ rows: [negativeProblem] })
+        .mockResolvedValueOnce({ rows: [{ tier: 1 }] })
+        .mockResolvedValueOnce({ rows: [] })                       // INSERT attempt
+        .mockResolvedValueOnce({ rows: [{ hint_budget: 3 }] })    // SELECT hint_budget
+        .mockResolvedValue({ rows: [{ consecutive_errors: 0 }] });
+      const req = {
+        params: { id: 'p1' },
+        body: { session_id: 's1', submitted_answer: submittedAnswer, time_spent_s: 30 },
+        studentId: 'stu-1',
+      } as unknown as AuthRequest;
+      const res = makeRes();
+      await submitAnswer(req, res);
+      return res;
+    }
+
+    const correctRes = await grade(-5);
+    expect(correctRes.json).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
+
+    jest.clearAllMocks();
+
+    const wrongRes = await grade(5); // wrong sign — previously graded correct
+    expect(wrongRes.json).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
+  });
 });

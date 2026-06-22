@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, onboarding, type CourseLevel } from '../lib/api';
+import { ApiError, onboarding } from '../lib/api';
 
 // Attention section uses a frequency scale; the other four use an agreement scale.
 type ScaleType = 'frequency' | 'agreement';
@@ -107,10 +107,7 @@ function buildSurveyResponses(answers: Record<string, AnswerValue>): Record<stri
 
 export function SelfDeclareRoute() {
   const navigate = useNavigate();
-  // step 0 = basics, steps 1–5 = survey sections
-  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
-  const [courseLevel, setCourseLevel] = useState<CourseLevel>('intro');
-  const [adhdFlag, setAdhdFlag] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,8 +123,8 @@ export function SelfDeclareRoute() {
     setError(null);
     try {
       await onboarding.selfDeclare({
-        adhd_flag: adhdFlag,
-        course_level: courseLevel,
+        adhd_flag: false,
+        course_level: 'intro',
         responses: buildSurveyResponses(answers),
       });
       navigate('/dashboard');
@@ -139,101 +136,19 @@ export function SelfDeclareRoute() {
   }
 
   return (
-    <>
-      {step === 0 ? (
-        <div className="min-h-screen bg-[#F8F9FA] py-12 font-['IBM_Plex_Sans',sans-serif]">
-          <div className="mx-auto w-full max-w-3xl px-6">
-            <BasicsStep
-              courseLevel={courseLevel}
-              adhdFlag={adhdFlag}
-              onCourseLevel={setCourseLevel}
-              onAdhd={setAdhdFlag}
-              onNext={() => setStep(1)}
-            />
-
-            <p className="mt-6 text-center text-xs text-[#99A1AF]">
-              © 2026 Survey Platform. All responses are confidential.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <SurveyStep
-          section={SECTIONS[step - 1]}
-          sectionIndex={step - 1}
-          answers={answers}
-          totalAnswered={totalAnswered}
-          onAnswer={setAnswer}
-          onPrev={() => setStep((step - 1) as 0 | 1 | 2 | 3 | 4)}
-          onNext={() => setStep((step + 1) as 2 | 3 | 4 | 5)}
-          onSubmit={handleSubmit}
-          submitting={submitting}
-          error={error}
-          isLast={step === 5}
-        />
-      )}
-    </>
-  );
-}
-
-interface BasicsStepProps {
-  courseLevel: CourseLevel;
-  adhdFlag: boolean;
-  onCourseLevel: (v: CourseLevel) => void;
-  onAdhd: (v: boolean) => void;
-  onNext: () => void;
-}
-
-function BasicsStep({ courseLevel, adhdFlag, onCourseLevel, onAdhd, onNext }: BasicsStepProps) {
-  return (
-    <div className="rounded-xl border border-[#E5E7EB] bg-white p-10 shadow-sm">
-      <h1 className="text-2xl font-bold text-black">A few quick questions</h1>
-      <p className="mt-2 text-sm text-[#5D5D5D]">
-        Help us tailor the experience to your background.
-      </p>
-
-      <div className="mt-8 space-y-6">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="course-level" className="text-xs font-bold uppercase tracking-[0.05em] text-[#99A1AF]">
-            Course Level
-          </label>
-          <select
-            id="course-level"
-            value={courseLevel}
-            onChange={(e) => onCourseLevel(e.target.value as CourseLevel)}
-            className="h-[50px] rounded-[10px] border border-[#E5E7EB] bg-[#F9FBFC] px-4 text-[15px] focus:border-[#615FFF] focus:outline-none focus:ring-2 focus:ring-[#615FFF]/20"
-          >
-            <option value="intro">Intro</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
-          </select>
-        </div>
-
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            checked={adhdFlag}
-            onChange={(e) => onAdhd(e.target.checked)}
-            className="mt-1 h-5 w-5 rounded border-[#E5E7EB] text-[#615FFF] focus:ring-[#615FFF]"
-          />
-          <span className="text-sm text-black">
-            <span className="font-medium">I have ADHD or a similar attention profile.</span>
-            <span className="block text-[#5D5D5D]">
-              We'll adjust pacing and chunk lengths to suit your needs.
-            </span>
-          </span>
-        </label>
-      </div>
-
-      <div className="mt-10 flex justify-end">
-        <button
-          type="button"
-          onClick={onNext}
-          className="h-[50px] rounded-[10px] bg-[#615FFF] px-8 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#5350e6]"
-        >
-          Continue
-        </button>
-      </div>
-    </div>
+    <SurveyStep
+      section={SECTIONS[step - 1]}
+      sectionIndex={step - 1}
+      answers={answers}
+      totalAnswered={totalAnswered}
+      onAnswer={setAnswer}
+      onPrev={() => setStep((step - 1) as 1 | 2 | 3 | 4 | 5)}
+      onNext={() => setStep((step + 1) as 1 | 2 | 3 | 4 | 5)}
+      onSubmit={handleSubmit}
+      submitting={submitting}
+      error={error}
+      isLast={step === 5}
+    />
   );
 }
 

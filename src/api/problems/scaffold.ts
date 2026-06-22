@@ -9,6 +9,7 @@ import pool from '../../db/client';
 import { AuthRequest } from '../auth/middleware';
 import { getSession, setSession } from '../../redis/session-store';
 import { gradeCircuitCanvas, parseCircuitCanvasState } from '../../lib/circuit-canvas';
+import { isNumericAnswerCorrect } from '../../lib/numeric-grading';
 import type { LearnerProfile, McqOption, StepType } from '../../types/schema';
 
 const STEP_ATTEMPT_BUDGET = 5;
@@ -173,14 +174,11 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
       if (step.ground_truth_answer === null) {
         correct = null;                                              // ungraded placeholder
       } else {
-        const submitted   = Number(submitted_value);
-        const groundTruth = Number(step.ground_truth_answer);
-        const tolerance   = step.tolerance ?? 0.01;
-        if (!Number.isFinite(submitted) || groundTruth === 0) {
-          correct = !Number.isFinite(submitted) ? false : submitted === 0;
-        } else {
-          correct = Math.abs(submitted - groundTruth) / Math.abs(groundTruth) <= tolerance;
-        }
+        correct = isNumericAnswerCorrect(
+          submitted_value,
+          Number(step.ground_truth_answer),
+          step.tolerance ?? 0.01,
+        );
       }
       break;
     }

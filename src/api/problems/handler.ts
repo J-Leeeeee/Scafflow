@@ -5,6 +5,7 @@ import { getSession, setSession } from '../../redis/session-store';
 import { updateSkillTier } from '../../services/skill-updater';
 import { updateConsecutiveErrors } from '../../services/cognitive-state';
 import { checkAfterSubmit } from '../../services/adaptive-engine';
+import { isNumericAnswerCorrect } from '../../lib/numeric-grading';
 
 // Ground truth fields are intentionally omitted from all public responses.
 type ProblemPublic = {
@@ -97,10 +98,12 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const problem     = problemResult.rows[0];
-  const groundTruth = Number(problem.ground_truth_answer);
-  const submitted   = Number(submitted_answer);
-  const correct     = Math.abs(submitted - groundTruth) / groundTruth <= problem.tolerance;
+  const problem = problemResult.rows[0];
+  const correct = isNumericAnswerCorrect(
+    submitted_answer,
+    Number(problem.ground_truth_answer),
+    problem.tolerance,
+  );
 
   const skillRow = await pool.query<{ tier: number }>(
     'SELECT tier FROM student_skills WHERE student_id=$1 AND topic=$2',

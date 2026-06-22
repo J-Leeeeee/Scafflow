@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import pool from '../../db/client';
 import { AuthRequest } from '../auth/middleware';
 
@@ -21,8 +21,8 @@ interface HomeworkSetRow {
 // GET /api/homework-sets
 // Returns all problem sets with their problems and a per-student attempted flag.
 // "attempted" is true if the student has any step attempt on that problem.
-export async function listHomeworkSets(req: AuthRequest, res: Response): Promise<void> {
-  const studentId = req.studentId;
+export async function listHomeworkSets(req: Request, res: Response): Promise<void> {
+  const studentId = (req as AuthRequest).studentId;
 
   const result = await pool.query<HomeworkSetRow>(
     `SELECT

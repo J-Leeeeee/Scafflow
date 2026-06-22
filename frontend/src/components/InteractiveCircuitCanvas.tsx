@@ -25,6 +25,9 @@ const MESH_LOOPS: ReadonlyArray<readonly [number, number]> = [
   [212, 40],
 ];
 
+const GROUND_SELECTION_COLOR = '#615FFF';
+const GROUND_SELECTION_COLOR_SOFT = 'rgba(97, 95, 255, 0.18)';
+
 const GROUND_NODE_TARGETS: ReadonlyArray<{
   id: CircuitNodeId;
   cx: number;
@@ -193,9 +196,9 @@ export function InteractiveCircuitCanvas({
                     cx={target.cx}
                     cy={target.cy}
                     r={target.id === 'bottom_rail' ? 14 : 11}
-                    fill={selectedNode === target.id ? 'rgba(97,95,255,0.18)' : 'transparent'}
-                    stroke={selectedNode === target.id ? '#615FFF' : 'transparent'}
-                    strokeWidth="1.5"
+                    fill="transparent"
+                    stroke="transparent"
+                    strokeWidth="0"
                     className="cursor-pointer hover:fill-blue-100/50 transition-colors"
                     aria-label={`Select ${target.label} as ground`}
                     onClick={() => handleGroundNodeClick(target.id)}
@@ -234,17 +237,18 @@ function GroundMarker({ cx, cy }: { cx: number; cy: number }) {
   return (
     <g
       transform={`translate(${cx} ${cy})`}
-      stroke="#615FFF"
-      strokeWidth="1.8"
+      stroke={GROUND_SELECTION_COLOR}
+      strokeWidth="1.7"
       strokeLinecap="round"
       fill="none"
       pointerEvents="none"
     >
-      <circle cx="0" cy="0" r="6.5" fill="rgba(97,95,255,0.18)" />
-      <line x1="0" y1="5" x2="0" y2="15" />
-      <line x1="-8" y1="15" x2="8" y2="15" />
-      <line x1="-5" y1="19" x2="5" y2="19" />
-      <line x1="-2.5" y1="23" x2="2.5" y2="23" />
+      <circle cx="0" cy="0" r="8" fill={GROUND_SELECTION_COLOR_SOFT} stroke="none" />
+      <circle cx="0" cy="0" r="4.5" fill={GROUND_SELECTION_COLOR} stroke="white" strokeWidth="1.4" />
+      <line x1="0" y1="5" x2="0" y2="14" />
+      <line x1="-8" y1="14" x2="8" y2="14" />
+      <line x1="-5.5" y1="18" x2="5.5" y2="18" />
+      <line x1="-3" y1="22" x2="3" y2="22" />
     </g>
   );
 }

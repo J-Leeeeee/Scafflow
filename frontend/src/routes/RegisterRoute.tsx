@@ -1,19 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ApiError, auth, type CourseLevel } from '../lib/api';
-
-const COURSE_LEVELS: { value: CourseLevel; label: string }[] = [
-  { value: 'intro',        label: 'Intro — First circuits course' },
-  { value: 'intermediate', label: 'Intermediate — AC circuits' },
-  { value: 'advanced',     label: 'Advanced — Graduate level' },
-];
+import { ApiError, auth } from '../lib/api';
 
 export function RegisterRoute() {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState('');
   const [netid, setNetid]             = useState('');
   const [password, setPassword]       = useState('');
-  const [courseLevel, setCourseLevel] = useState<CourseLevel>('intro');
   const [consent, setConsent]         = useState(false);
   const [error, setError]             = useState<string | null>(null);
   const [submitting, setSubmitting]   = useState(false);
@@ -32,7 +25,6 @@ export function RegisterRoute() {
         email,
         password,
         display_name: displayName.trim() || undefined,
-        course_level: courseLevel,
         consent: true,
       });
       navigate('/onboarding/self-declare');
@@ -85,27 +77,6 @@ export function RegisterRoute() {
               autoComplete="new-password"
               required
             />
-
-            <div className="flex flex-col gap-1">
-              <label
-                htmlFor="courseLevel"
-                className="text-xs font-bold uppercase tracking-[0.05em] text-[#99A1AF]"
-              >
-                Course Level
-              </label>
-              <select
-                id="courseLevel"
-                value={courseLevel}
-                onChange={(e) => setCourseLevel(e.target.value as CourseLevel)}
-                className="h-[50px] rounded-[10px] border border-[#E5E7EB] bg-[#F9FBFC] px-4 text-[15px] text-black focus:border-[#615FFF] focus:outline-none focus:ring-2 focus:ring-[#615FFF]/20"
-              >
-                {COURSE_LEVELS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
               <input

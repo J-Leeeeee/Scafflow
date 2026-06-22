@@ -169,6 +169,52 @@ describe('POST /api/onboarding/diagnostic', () => {
     expect(body.completed).toBe(true);
     expect(body.results).toHaveLength(3);
   });
+
+  // Regression: a negative ground truth previously graded a wrong-sign answer correct.
+  it('grades negative ground truth by relative magnitude', async () => {
+    const answers = [
+      { problem_id: 'p1', submitted_answer: 5,  time_spent_s: 30 }, // wrong sign vs -5
+      { problem_id: 'p2', submitted_answer: 3,  time_spent_s: 20 }, // exact
+      { problem_id: 'p3', submitted_answer: 10, time_spent_s: 25 }, // exact
+    ];
+    const problems = [
+      { id: 'p1', topic: 'kvl',     ground_truth_answer: -5, tolerance: 0.01 },
+      { id: 'p2', topic: 'kcl',     ground_truth_answer: 3,  tolerance: 0.01 },
+      { id: 'p3', topic: 'phasors', ground_truth_answer: 10, tolerance: 0.01 },
+    ];
+
+    const client = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [] })              // BEGIN
+        .mockResolvedValueOnce({ rows: [{ tier: 1 }] })  // SELECT tier p1
+        .mockResolvedValueOnce({ rows: [] })              // INSERT attempt p1
+        .mockResolvedValueOnce({ rows: [] })              // UPDATE skill p1
+        .mockResolvedValueOnce({ rows: [{ tier: 1 }] })  // SELECT tier p2
+        .mockResolvedValueOnce({ rows: [] })              // INSERT attempt p2
+        .mockResolvedValueOnce({ rows: [] })              // UPDATE skill p2
+        .mockResolvedValueOnce({ rows: [{ tier: 1 }] })  // SELECT tier p3
+        .mockResolvedValueOnce({ rows: [] })              // INSERT attempt p3
+        .mockResolvedValueOnce({ rows: [] })              // UPDATE skill p3
+        .mockResolvedValueOnce({ rows: [] })              // UPDATE cold_start_done
+        .mockResolvedValue({ rows: [] }),                 // COMMIT
+      release: jest.fn(),
+    };
+
+    (mockPool.query as jest.Mock)
+      .mockResolvedValueOnce({ rows: [{ consent_given_at: new Date(), cold_start_done: false }] })
+      .mockResolvedValueOnce({ rows: problems })
+      .mockResolvedValueOnce({ rows: [{ id: 'sess-1' }] });
+    (mockPool.connect as jest.Mock).mockResolvedValue(client);
+
+    const res = makeRes();
+    await submitDiagnostic(makeReq({ answers }), res);
+
+    const body = (res.json as jest.Mock).mock.calls[0][0] as {
+      results: Array<{ problem_id: string; correct: boolean }>;
+    };
+    expect(body.results.find((r) => r.problem_id === 'p1')?.correct).toBe(false);
+    expect(body.results.find((r) => r.problem_id === 'p2')?.correct).toBe(true);
+  });
 });
 
 // ── acceptConsent ──────────────────────────────────────────────────────────────

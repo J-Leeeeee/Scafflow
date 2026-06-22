@@ -4,6 +4,7 @@ import pool from '../../db/client';
 import { AuthRequest } from '../auth/middleware';
 import type { CourseLevel, LearnerProfile, Topic } from '../../types/schema';
 import { computeAdaptiveThresholds } from '../../services/onboarding-survey';
+import { isNumericAnswerCorrect } from '../../lib/numeric-grading';
 
 // Which 3 topics to use for cold-start diagnostics per course level
 const DIAGNOSTIC_TOPICS: Record<CourseLevel, Topic[]> = {
@@ -224,9 +225,11 @@ export async function submitDiagnostic(req: Request, res: Response): Promise<voi
       }
 
       // Constraint #4: numeric tolerance, never string match
-      const groundTruth = Number(problem.ground_truth_answer);
-      const submitted   = Number(answer.submitted_answer);
-      const correct     = Math.abs(submitted - groundTruth) / groundTruth <= problem.tolerance;
+      const correct = isNumericAnswerCorrect(
+        answer.submitted_answer,
+        Number(problem.ground_truth_answer),
+        problem.tolerance,
+      );
 
       const skillRow = await client.query<{ tier: number }>(
         'SELECT tier FROM student_skills WHERE student_id=$1 AND topic=$2',
