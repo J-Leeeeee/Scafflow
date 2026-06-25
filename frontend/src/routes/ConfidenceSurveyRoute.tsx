@@ -9,7 +9,13 @@ const TOPICS = [
   { key: 'kirchhoff_law', label: 'Kirchhoff Law' },
 ] as const;
 
-const LEVELS = ['Not Familiar', 'Beginner', 'Intermediate', 'Proficient', 'Expert'] as const;
+const LEVELS = [
+  'Not confident at all',
+  'Not confident',
+  'Neutral',
+  'Confident',
+  'Very confident',
+] as const;
 
 export function ConfidenceSurveyRoute() {
   const navigate = useNavigate();
