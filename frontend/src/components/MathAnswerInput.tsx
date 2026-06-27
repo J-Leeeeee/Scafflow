@@ -78,6 +78,7 @@ export function MathAnswerInput({
             className={inputClasses}
             style={hiddenInputStyle}
             placeholder={placeholder}
+            spellCheck={false}
           />
         ) : (
           <input
@@ -89,6 +90,7 @@ export function MathAnswerInput({
             className={inputClasses}
             style={hiddenInputStyle}
             placeholder={placeholder}
+            spellCheck={false}
           />
         )}
         {showRendered && previewHtml && (

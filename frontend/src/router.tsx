@@ -13,6 +13,7 @@ import { DiagnosticRoute } from './routes/DiagnosticRoute';
 import { ProblemRoute } from './routes/ProblemRoute';
 import { DesignProblemRoute } from './routes/DesignProblemRoute';
 import { DesignShowcaseRoute } from './routes/DesignShowcaseRoute';
+import { SettingsRoute } from './routes/SettingsRoute';
 
 const shell = (element: ReactNode) => <AppShell>{element}</AppShell>;
 
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
   { path: '/...',                     element: <Navigate to="/dashboard" replace /> },
   { path: '/dashboard.',              element: <Navigate to="/dashboard" replace /> },
   { path: '/dashboard',               element: <DashboardRoute /> },
+  { path: '/settings',                element: <SettingsRoute /> },
   { path: '/courses/:courseId',                    element: <CourseAssignmentsRoute /> },
   { path: '/courses/:courseId/hw/:hwId/confidence', element: <ConfidenceSurveyRoute /> },
   { path: '/register',                element: <RegisterRoute /> },

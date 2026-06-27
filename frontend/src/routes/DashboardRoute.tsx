@@ -81,6 +81,16 @@ export function DashboardRoute() {
             </div>
             <button
               type="button"
+              onClick={() => {
+                setAccountOpen(false);
+                navigate('/settings');
+              }}
+              className="w-full px-4 py-3 text-left text-sm font-semibold text-[#364153] transition hover:bg-[#F8F9FA]"
+            >
+              Settings
+            </button>
+            <button
+              type="button"
               onClick={handleLogout}
               disabled={loggingOut}
               className="w-full px-4 py-3 text-left text-sm font-semibold text-[#364153] transition hover:bg-[#F8F9FA] disabled:cursor-not-allowed disabled:opacity-60"
