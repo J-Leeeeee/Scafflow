@@ -13,6 +13,7 @@ import {
   hasCircuitCanvasInteraction,
   parseCircuitCanvasState,
 } from '../lib/circuitCanvas';
+import { equationsAreEquivalent } from '../lib/equation-grading';
 
 const ATTEMPT_BUDGET = 5;
 
@@ -308,7 +309,7 @@ function textAnswersAreCorrect(step: TextInputStep, values: string[]) {
       ));
     case 'labeled_equations': {
       const equationsMatch = step.checked.equations.every((expected, index) => (
-        normalizeEquation(values[index]) === normalizeEquation(expected)
+        equationsAreEquivalent(values[index], expected)
       ));
       if (!step.valueField || step.checked.value == null) return equationsMatch;
       return equationsMatch
@@ -335,10 +336,6 @@ function numericAnswersMatch(submittedStr: string | undefined, expectedStr: stri
 
 function normalizeText(value: string | undefined) {
   return (value ?? '').trim().replace(/\s+/g, ' ').replace(/_/g, '').toLowerCase();
-}
-
-function normalizeEquation(value: string | undefined) {
-  return (value ?? '').replace(/\s+/g, '');
 }
 
 function hasDrawingInteraction(canvasState: string | undefined) {

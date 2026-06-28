@@ -402,7 +402,7 @@ export const profile2Steps: Step[] = [
     number: 8,
     prompt: 'Before we can find $R_{\\mathrm{th}}$, we need to find $I_{\\mathrm{sc}}$.',
     helperText:
-      'Using the sketchpad on the right, redraw the circuit diagram and label all mesh currents/node voltages needed to determine the short-circuit current.',
+      'Using the interactive canvas on the right, short terminals a and b, then label all mesh currents needed to determine the short-circuit current.',
     actionLabel: 'Check Drawing',
     canvasTask: 'short_mesh',
     filled: {},

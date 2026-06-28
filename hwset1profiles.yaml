@@ -69,7 +69,7 @@ profile_1_reference:
 #    5 |  7 | yes         | yes           | yes         | no           | Figma 2-phase UI merged
 #    6 |  8 | yes         | yes           | yes         | no           |
 #    7 |  — | —           | —             | —           | —            | NEW Rth-method MCQ
-#    8 |  9 | yes         | yes           | yes         | no           | helperText differs
+#    8 |  9 | yes         | yes           | yes         | no           |
 #    9 | 10 | yes         | yes           | yes         | no           |
 #   10 | 11 | yes         | yes           | yes         | no           |
 #   11 | 12 | yes         | yes           | yes         | no           |
@@ -229,10 +229,10 @@ profile_2:
         copy_feedback: true
         copy_prompt: true
         kind_changed: false
-        notes: Same as P1 step 9; helperText wording differs slightly in Figma (sketchpad vs interactive canvas).
+        notes: Same as P1 step 9.
       figma_frame: profile 2 step 8
       prompt: 'Before we can find $R_{\mathrm{th}}$, we need to find $I_{\mathrm{sc}}$.'
-      helperText: "Using the sketchpad on the right, redraw the circuit diagram and label all mesh currents/node voltages needed to determine the short-circuit current."
+      helperText: "Using the interactive canvas on the right, short terminals a and b, then label all mesh currents needed to determine the short-circuit current."
       actionLabel: Check Drawing
       answer: {}
       feedback:

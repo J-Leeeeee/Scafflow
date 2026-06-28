@@ -38,6 +38,76 @@ function confidenceTopics(): Record<string, number> {
   };
 }
 
+function profile1SelfDeclareResponses(): Record<string, number> {
+  return {
+    b1_1: 5,
+    b1_2: 5,
+    b1_3: 5,
+    b1_4: 5,
+    b1_5: 5,
+    au_1: 1,
+    au_2: 1,
+    au_3: 1,
+    au_4: 1,
+    co_1: 1,
+    co_2: 1,
+    co_3: 1,
+    co_4: 1,
+    sr_1: 1,
+    sr_2: 1,
+    sr_3: 1,
+    sr_4: 1,
+    se_1: 1,
+    se_2: 1,
+    se_3: 1,
+    se_4: 1,
+  };
+}
+
+function leftmostSelfDeclareResponses(): Record<string, number> {
+  return {
+    b1_1: 1,
+    b1_2: 1,
+    b1_3: 1,
+    b1_4: 1,
+    b1_5: 1,
+    au_1: 1,
+    au_2: 1,
+    au_3: 1,
+    au_4: 1,
+    co_1: 1,
+    co_2: 1,
+    co_3: 1,
+    co_4: 1,
+    sr_1: 1,
+    sr_2: 1,
+    sr_3: 1,
+    sr_4: 1,
+    se_1: 1,
+    se_2: 1,
+    se_3: 1,
+    se_4: 1,
+  };
+}
+
+function lowConfidenceTopics(): Record<string, number> {
+  return {
+    thevenin_norton: 1,
+    mesh_current: 1,
+    node_voltage: 1,
+    kirchhoff_law: 1,
+  };
+}
+
+function highConfidenceTopics(): Record<string, number> {
+  return {
+    thevenin_norton: 5,
+    mesh_current: 5,
+    node_voltage: 5,
+    kirchhoff_law: 5,
+  };
+}
+
 beforeEach(async () => {
   await truncateAll();
   clearStore();
@@ -227,6 +297,144 @@ describe('learner profile survey flow', () => {
       responses: validSelfDeclareResponses(),
     });
     expect(res.status).toBe(403);
+  });
+
+  it('assigns Profile 1 when attention is high and other constructs are low', async () => {
+    const agent = request.agent(app);
+    const registerRes = await agent
+      .post('/api/auth/register')
+      .send({ email: 'survey-profile1@uw.edu', password: 'pw', consent: true });
+    expect(registerRes.status).toBe(201);
+    const studentId = registerRes.body.id as string;
+
+    await agent.post('/api/onboarding/self-declare').send({
+      adhd_flag: false,
+      course_level: 'intro',
+      responses: profile1SelfDeclareResponses(),
+    }).expect(200);
+
+    const confidenceRes = await agent.post('/api/onboarding/confidence').send({
+      topics: confidenceTopics(),
+    });
+    expect(confidenceRes.status).toBe(200);
+    expect(confidenceRes.body).toMatchObject({
+      status: 'Ok',
+      assignedProfile: 'Profile1',
+      learnerProfile: 'starter',
+      profileNumber: 1,
+    });
+
+    const dbCheck = await pool.query<{ learner_profile: string | null }>(
+      'SELECT learner_profile FROM students WHERE id = $1',
+      [studentId],
+    );
+    expect(dbCheck.rows[0].learner_profile).toBe('starter');
+
+    const statusRes = await agent.get('/api/onboarding/status');
+    expect(statusRes.body).toMatchObject({
+      confidenceComplete: true,
+      learnerProfile: 'starter',
+      profileNumber: 1,
+    });
+  });
+
+  it('assigns Profile 2 when leftmost answers are selected everywhere (user-reported repro)', async () => {
+    const agent = request.agent(app);
+    const registerRes = await agent
+      .post('/api/auth/register')
+      .send({ email: 'survey-profile2-leftmost@uw.edu', password: 'pw', consent: true });
+    expect(registerRes.status).toBe(201);
+    const studentId = registerRes.body.id as string;
+
+    await agent.post('/api/onboarding/self-declare').send({
+      adhd_flag: false,
+      course_level: 'intro',
+      responses: leftmostSelfDeclareResponses(),
+    }).expect(200);
+
+    const confidenceRes = await agent.post('/api/onboarding/confidence').send({
+      topics: confidenceTopics(),
+    });
+    expect(confidenceRes.status).toBe(200);
+    expect(confidenceRes.body).toMatchObject({
+      status: 'Ok',
+      assignedProfile: 'Profile2',
+      learnerProfile: 'exploring',
+      profileNumber: 2,
+      tieBreakUsed: true,
+    });
+
+    const dbCheck = await pool.query<{
+      learner_profile: string | null;
+      classification_result: {
+        assignedProfile?: string;
+        profileScores?: { profile1: number; profile2: number };
+        tieBreakUsed?: boolean;
+      } | null;
+    }>(
+      `SELECT s.learner_profile, lsr.classification_result
+         FROM students s
+         JOIN learner_survey_responses lsr ON lsr.student_id = s.id
+        WHERE s.id = $1`,
+      [studentId],
+    );
+    expect(dbCheck.rows[0].learner_profile).toBe('exploring');
+    expect(dbCheck.rows[0].classification_result).toMatchObject({
+      assignedProfile: 'Profile2',
+      profileScores: { profile1: 4, profile2: 4 },
+      tieBreakUsed: true,
+    });
+  });
+
+  it('returns the same profile regardless of topic confidence scores', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/auth/register')
+      .send({ email: 'survey-topic-independent@uw.edu', password: 'pw', consent: true })
+      .expect(201);
+
+    await agent.post('/api/onboarding/self-declare').send({
+      adhd_flag: false,
+      course_level: 'intro',
+      responses: leftmostSelfDeclareResponses(),
+    }).expect(200);
+
+    const lowConfidenceRes = await agent.post('/api/onboarding/confidence').send({
+      topics: lowConfidenceTopics(),
+    });
+    expect(lowConfidenceRes.status).toBe(200);
+    expect(lowConfidenceRes.body).toMatchObject({
+      assignedProfile: 'Profile2',
+      learnerProfile: 'exploring',
+      profileNumber: 2,
+      topicConfidenceScore: 1,
+    });
+
+    await truncateAll();
+    clearStore();
+
+    const agent2 = request.agent(app);
+    await agent2
+      .post('/api/auth/register')
+      .send({ email: 'survey-topic-independent2@uw.edu', password: 'pw', consent: true })
+      .expect(201);
+
+    await agent2.post('/api/onboarding/self-declare').send({
+      adhd_flag: false,
+      course_level: 'intro',
+      responses: leftmostSelfDeclareResponses(),
+    }).expect(200);
+
+    const highConfidenceRes = await agent2.post('/api/onboarding/confidence').send({
+      topics: highConfidenceTopics(),
+    });
+    expect(highConfidenceRes.status).toBe(200);
+    expect(highConfidenceRes.body).toMatchObject({
+      assignedProfile: 'Profile2',
+      learnerProfile: 'exploring',
+      profileNumber: 2,
+      topicConfidenceScore: 5,
+    });
   });
 });
 
