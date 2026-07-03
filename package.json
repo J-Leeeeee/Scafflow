@@ -24,7 +24,9 @@
     "test:adaptive": "node --import tsx scripts/test-adaptive-system.ts",
     "test:smoke": "node --import tsx scripts/test-smoke-system.ts",
     "test:prepush": "node --import tsx scripts/test-prepush-balanced.ts",
-    "test:prepush:prepare": "node --import tsx scripts/test-prepush-balanced.ts --prepare"
+    "test:prepush:prepare": "node --import tsx scripts/test-prepush-balanced.ts --prepare",
+    "docs:api:lint": "redocly lint docs/openapi/openapi.yaml",
+    "docs:api:build": "redocly build-docs docs/openapi/openapi.yaml -o docs/openapi/reference.html"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
@@ -39,6 +41,7 @@
     "pg": "^8.12.0"
   },
   "devDependencies": {
+    "@redocly/cli": "^1.34.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
